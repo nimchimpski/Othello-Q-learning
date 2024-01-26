@@ -9,6 +9,6 @@ from othello import train, play
 
 
 
-play(1,0)
+play()
 
 

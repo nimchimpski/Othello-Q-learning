@@ -1,6 +1,6 @@
 from othello import *
 
-newgame = Othello()
+newgame = Othello(3)
 
 ####   TEST BOARD
 def create_test_board():
@@ -8,19 +8,19 @@ def create_test_board():
     #          [WHITE,WHITE,EMPTY],
     #          [BLACK,EMPTY,EMPTY]]
     
-    board = [[WHITE,BLACK, EMPTY],
-             [WHITE,WHITE,BLACK],
-             [BLACK,BLACK,BLACK]]
+    board = [[WHITE,WHITE, WHITE],
+             [EMPTY,WHITE,BLACK],
+             [WHITE,WHITE,BLACK]]
     return board
 
 testboard = create_test_board()
 # print(f'testboard={testboard}')
 newgame.board = testboard
-print(f'newgame board={newgame.board}')
+# print(f'newgame board={newgame.board}')
 
-print(f'///newgame.player={newgame.player}')
-print(f'///newgame.enemy={newgame.enemy}')
-print(f'///newgame.turnsplayed={newgame.turnsplayed}')
+# print(f'///newgame.player={newgame.player}')
+# print(f'///newgame.enemy={newgame.enemy}')
+# print(f'///newgame.turnsplayed={newgame.turnsplayed}')
 
 #### TEST DIRECTION_CHECKER (cell,dir,player,enemy)
 
@@ -40,13 +40,11 @@ print(f'///newgame.turnsplayed={newgame.turnsplayed}')
 #### TEST WHOSE TURN
 
 #### TEST MOVE
-newgame.move((0,2))
+# newgame.move((0,2))
 
 ####   TEST PRINTBOARD
 
 # newgame.printboard()
-
-
 
 #### TEST SCORES
 # blackwins =  [[WHITE,BLACK, BLACK],
@@ -63,5 +61,7 @@ newgame.move((0,2))
 
 # print(f'///winner={newgame.calc_winner()}')
 
+#### TEST PLAY
 
+play()
 

@@ -8,7 +8,7 @@ WHITE = 'O'
 
 class Game():
 
-    def __init__(self, size=4, human=BLACK):
+    def __init__(self, size=3, human=BLACK):
         """
         Initialize game board.
         Each game board has
@@ -138,7 +138,27 @@ class Game():
         return self.board
 
     def direction_checker(self, cell, direction, player=None, enemy=None):
-        print(f'+++direction={direction}')
+
+        #### MAKE PRINTABLE DIRECTIONS
+        if direction == (-1, -1):
+            compass = 'NW'
+        elif direction == (-1, 0):
+            compass = 'N'
+        elif direction == (-1, 1):  
+            compass = 'NE'
+        elif direction == (0, -1):
+            compass = 'W'
+        elif direction == (0, 1):
+            compass = 'E'
+        elif direction == (1, -1):
+            compass = 'SW'
+        elif direction == (1, 0):
+            compass = 'S'
+        elif direction == (1, 1):
+            compass = 'SE'
+
+        print(f'+++++direction from {cell} in direction { compass}')
+        
         ####      CHECK FOR TEST CONDITIONS
         if player is None:
             player = self.player
@@ -147,40 +167,49 @@ class Game():
 
         ####       SET UP VARIABLES
         captured = set()
-        nextcell = tuple(c + d for c,d in zip(cell, direction))
-        print(f'nextcell={nextcell}')
-        print(f'checking direction {direction} from {cell}')
+        nextcell = cell
 
+        def calcnextcell():
+            print(f'+++calcnextcell ')
+            result = tuple(c + d for c,d in zip(nextcell, direction)) 
+            ####       IS THE NEW CELL ON THE BOARD?
+            if result[0] < 0 or result[0] >= self.size or result[1] < 0 or result[1] >= self.size:
+                print(f'OUT OF BOUNDS')
+                return None
+            print(f'result={result}')
+            return result
+        
         ####   RUN LOOP TO CHECK DIRECTION
         while True:
-            ####       IS THE NEW POSITION ON THE BOARD?
-            if nextcell[0] < 0 or nextcell[0] >= self.size or nextcell[1] < 0 or nextcell[1] >= self.size:
-            # if newi < 0 or newi >= self.size-1 or newj < 0 or newj >= self.size-1:
-                print(f'----RETURNING None. off board')
+            ####       CALCULATE NEXT CELL
+            nextcell = calcnextcell()
+            if nextcell is None:
                 return None
+            print(f'nextcell={nextcell}')
+
+            
 
             ####       IF NEXTCELL IS NOT ENEMY, ABORT?
             if not self.board[nextcell[0]][nextcell[1]] == enemy:
-                print(f'----RETURNING None, no enemy neighbour')
+                print(f'----NOT ENEMY NEIGHBOUR')
                 return None
 
-            ####       KEEP LOOKING AGAIN IN THE SAME DIRECTION
-            print(f'enemy at {nextcell} in direction {direction},')
+            ####       FOUND ENENY
+            print(f'enemy at {nextcell} in direction {compass},')
             captured.add(nextcell)
             print(f'captured={captured}')
 
-            ####       CALCULATE NEXT CELL
-            nextcell = tuple(c + d for c,d in zip(cell, direction))
-            print(f'nextcell={nextcell}')
-
+        
             ####       LOOK FOR A PLAYER PIECE IN THAT DIRECTION TO VALIDATE MOVE
-            if self.board[newcell[0]][newcell[1]] == player:
-                print(f'----RETURNING captured. found player piece at {newi,newj}')
+            further = calcnextcell()
+            print(f'further={further}')
+            if further and (self.board[further[0]][further[1]] == player):
+                print(f'----FOUND PLAYER AT END! {nextcell}')
                 print(f'---captured in this direction={captured}')
                 return captured
             else:
             ####       NO PLAYER PIECE IN THAT DIRECTION, INVALID MOVE
-                print(f'----RETURNING None. no player piece in direction')
+                print(f'----NO PLAYER PIECE AT END :(')
                 # captured = set()
                 return None
           
@@ -189,7 +218,7 @@ class Game():
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
         """
-        # print('+++availale_actions()')
+        print('+++availale_actions()')
         if player is None:
             player = self.player
         if enemy is None:   
@@ -197,16 +226,32 @@ class Game():
         actions = {}
         ####       create the directions
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
+        # directions = [(0,-1), (-1,-1)]
         print(f'directions={directions}')
 
-        ####        FOR EACH BOARD POSITION
+        ####        FOR EACH BOARD cell
         for i, row in enumerate(self.board):
             # print(f' x= {x}')
-            for j, cell in enumerate(row):
-                # print(f'\n >>>CHECKING THIS = {x,y}')
-                ####       is the position empty?
-                if cell != EMPTY:
+            for j, content in enumerate(row):
+                cell = (i,j)
+                
+
+        ####        TEST BLOCK
+        # if True: # for testing
+        #     if True:  # for testing
+        #         cell = (1,2) # for testing
+        #         content = self.board[cell[0]][cell[1]] # for testing
+        ####       END TEST BLOCK
+
+                print(f'\n >>>CHECKING THIS = {cell}')
+
+                ####       is the cell empty?
+                if content != EMPTY:
+                    print(f'----cell taken')  
                     continue
+                
+                # cell = (int(cell[0]), int(cell[1]))
+                # print(f'cell={cell}, type={type(cell[0])}')
 
                 alldirscaptured = set()
                 ####       FOR EACH DIRECTION
@@ -214,13 +259,21 @@ class Game():
                     
                     ####        IF VALID , ADD MOVE TO SET, ADD CAPTURED PIECES TO SET
                     onedircaptured = self.direction_checker(cell, direction, player , enemy)
-                    # print(f'xxxonedircaptured={onedircaptured}')
-                    ####    IF THERE IS ANY ADD TO TOAL CAPTURED FOR THIS POSITION
+                    print(f'xxxonedircaptured={onedircaptured}')
+                    ####    IF THERE IS ANY ADD TO TOAL CAPTURED FOR THIS cell
                     if onedircaptured:
+                        print(f'---onedircaptured=true')
                         alldirscaptured.update(onedircaptured)
-                    # print(f'xxxtotalcaptured={alldirscaptured}')  
+                    else:
+                        print(f'---onedircaptured=false')
+                        
+                    # print(f'xxxtotalcaptured={alldirscaptured}') 
+                print(f'alldirscaptured={alldirscaptured}') 
                 if alldirscaptured:
-                    actions[cell]= alldirscaptured  
+                    print(f'---alldirscaptured=true')
+                    actions[cell]= alldirscaptured 
+                else:
+                    print(f'---alldirscaptured=false') 
         return actions
 
     

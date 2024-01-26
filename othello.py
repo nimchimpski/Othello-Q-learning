@@ -6,9 +6,9 @@ EMPTY = ' '
 BLACK = '+'
 WHITE = 'O'
 
-class Game():
+class Othello():
 
-    def __init__(self, size=3, human=BLACK):
+    def __init__(self, size=4, human=BLACK):
         """
         Initialize game board.
         Each game board has
@@ -17,19 +17,15 @@ class Game():
         (print('\n+++init'))
         self.size = size
         self.board = self.create_board()
-        # self.board = self.tesboard()
         self.turnsplayed = 0
-
         self.player = BLACK
         self.enemy = WHITE
-       
-        print(f'player={self.player}')
+        # print(f'player={self.player}')
         self.human = human
-        print(f'human={human}')
+        # print(f'human={human}')
         self.winner = None
-        print(f'----end of init')
+        # print(f'----end of init')
     
-
     def printboard(self):
         print('\n+++printboard')
         # print(f'player={self.player}')
@@ -51,7 +47,6 @@ class Game():
             print()
         print()
         
-
     def whose_turn(self):
         print('\n+++whose_turn')
         print(f'turnsplayed={self.turnsplayed}')
@@ -96,38 +91,33 @@ class Game():
         if self.winner is not None:
             raise Exception("Game already won")
 
-              #####      get actiona and captured pieces from available_actions
-        # print(f'\nget the actionsdict from available_actions().....')
-        # actionsdict = self.available_actions()
+        #####      IS ACTION VALID
         try:
             if action not in self.available_actions():
                 raise invalidmoveError(" not in available_actions")
         except invalidmoveError as e:
              print(f"\n>>>>Error: {action} {e}<<<<<<< \n")
-        # print(f'actionsdict={actionsdict}')    
 
-        # mark board with move
-        self.board[action[0]][action[1]] = self.player
-        # print(f'board after move={self.board}')
-        
-        self.printboard()
-        print(f'board after move, before flips')
-
-        # flip captured pieces
-        bitstoflip = actionsdict[action]
+        ####       FLIP CAPTURED PIECES
+        availactions = self.available_actions()
+        print(f'action={action}'    )
+        print(f'availactions={availactions}')
+        bitstoflip = availactions[action]
         print(f'bitstoflip={bitstoflip}')
         for bit in bitstoflip:
             self.board[bit[0]][bit[1]] = self.player
         
+          #####     MARK BOARD WITH MOVE
+        self.board[action[0]][action[1]] = self.player
         self.printboard()
         print(f'board after flip')
         print(f'{self.player} just moved at {action}')
 
         ####       CHECK IF GAME OVER
-        # if self.terminal():
-        #     self.winner = self.winner()
-        #     print(f'GAME OVER! winner={self.winner}')
-        #     return 
+        if self.terminal():
+            self.winner = self.calc_winner()
+            print(f'GAME OVER! winner={self.winner}')
+            return 
       
 
         ####       Update turnsplayed   
@@ -176,7 +166,7 @@ class Game():
             if result[0] < 0 or result[0] >= self.size or result[1] < 0 or result[1] >= self.size:
                 print(f'OUT OF BOUNDS')
                 return None
-            print(f'result={result}')
+            # print(f'result={result}')
             return result
         
         ####   RUN LOOP TO CHECK DIRECTION
@@ -185,13 +175,13 @@ class Game():
             nextcell = calcnextcell()
             if nextcell is None:
                 return None
-            print(f'nextcell={nextcell}')
+            print(f'first nextcell calc={nextcell}')
 
             
 
             ####       IF NEXTCELL IS NOT ENEMY, ABORT?
             if not self.board[nextcell[0]][nextcell[1]] == enemy:
-                print(f'----NOT ENEMY NEIGHBOUR')
+                print(f'NOT ENEMY NEIGHBOUR')
                 return None
 
             ####       FOUND ENENY
@@ -202,10 +192,10 @@ class Game():
         
             ####       LOOK FOR A PLAYER PIECE IN THAT DIRECTION TO VALIDATE MOVE
             further = calcnextcell()
-            print(f'further={further}')
+            print(f'calc2 for player piece at end ={further}')
             if further and (self.board[further[0]][further[1]] == player):
-                print(f'----FOUND PLAYER AT END! {nextcell}')
-                print(f'---captured in this direction={captured}')
+                print(f'FOUND PLAYER AT END! {nextcell}')
+                print(f'captured in this direction={captured}')
                 return captured
             else:
             ####       NO PLAYER PIECE IN THAT DIRECTION, INVALID MOVE
@@ -213,7 +203,6 @@ class Game():
                 # captured = set()
                 return None
           
-
     def available_actions(self, player=None, enemy=None):
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
@@ -227,7 +216,7 @@ class Game():
         ####       create the directions
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
         # directions = [(0,-1), (-1,-1)]
-        print(f'directions={directions}')
+        # print(f'directions={directions}')
 
         ####        FOR EACH BOARD cell
         for i, row in enumerate(self.board):
@@ -247,7 +236,7 @@ class Game():
 
                 ####       is the cell empty?
                 if content != EMPTY:
-                    print(f'----cell taken')  
+                    print(f'CELL NOT EMPTY')  
                     continue
                 
                 # cell = (int(cell[0]), int(cell[1]))
@@ -259,30 +248,30 @@ class Game():
                     
                     ####        IF VALID , ADD MOVE TO SET, ADD CAPTURED PIECES TO SET
                     onedircaptured = self.direction_checker(cell, direction, player , enemy)
-                    print(f'xxxonedircaptured={onedircaptured}')
+                    print(f'onedir_captured={onedircaptured}')
                     ####    IF THERE IS ANY ADD TO TOAL CAPTURED FOR THIS cell
                     if onedircaptured:
-                        print(f'---onedircaptured=true')
+                        print(f'onedir_captured=true')
                         alldirscaptured.update(onedircaptured)
                     else:
-                        print(f'---onedircaptured=false')
+                        print(f'onedirc_aptured=false')
                         
                     # print(f'xxxtotalcaptured={alldirscaptured}') 
-                print(f'alldirscaptured={alldirscaptured}') 
+                print(f'alldirs_captured={alldirscaptured}') 
                 if alldirscaptured:
-                    print(f'---alldirscaptured=true')
+                    print(f'alldirs_captured=true')
                     actions[cell]= alldirscaptured 
                 else:
-                    print(f'---alldirscaptured=false') 
+                    print(f'alldirs_captured=false') 
         return actions
-
-    
    
-    def scores(self):
+    def scores(self, board=None):
         """
         Returns a tuple (black_score, white_score) for the current game state.
         """
         print(f'+++scores()')
+        if board is None:
+            board = self.board
         black_score = 0
         white_score = 0
         for row in self.board:
@@ -295,11 +284,13 @@ class Game():
         print(f'white_score={white_score}')
         return (black_score, white_score)
 
-    def winner(self):
+    def calc_winner(self):
         black, white = self.scores()
         if black > white:
+            self.winner = BLACK
             return BLACK
         elif white > black:
+            self.winner = WHITE
             return WHITE
         else:
             return None
@@ -574,10 +565,10 @@ def train(n):
     return player
 
 
-def play(ai, human_player=1):
+def play(player0=0, player1=1):
     """
-    Play human game against the AI.
-    `human_player` can be set to 0 or 1 to specify whether
+    Play game between 2 humans or human game against the AI.
+    `player0 = AI, human_player` can be set to 0 or 1 to specify whether
     human player moves first or second.
     """
 
@@ -586,37 +577,18 @@ def play(ai, human_player=1):
         human_player = random.randint(0, 1)
 
     # Create new game
-    game = Nim()
-
-    # def xor(numbers):
-    #     xor_result = 0
-    #     for number in numbers:
-    #         print(number)
-    #         xor_result ^= number
-    #         print(f"x={xor_result}")
-
-    #     return xor_result
-
-    # xored = xor(game.piles)
-    # # print(f"xored={xored}")
+    game = Othello()
 
 
 
     # Game loop
     while True:
 
-        # Print contents of piles
-        print()
-        print("Piles:")
-        for i, pile in enumerate(game.piles):
-            print(f"Pile {i}: {pile}")
-        print()
-
+        # Print board
+        
         # Compute available actions
-        available_actions = Nim.available_actions(game.piles)
-        time.sleep(1)
-
-        # Let human make a move
+        
+        # Let player make a move
         if game.player == human_player:
             print("Your Turn")
             while True:
@@ -626,15 +598,6 @@ def play(ai, human_player=1):
                     break
                 print("Invalid move, try again.")
 
-        # Have AI make a move
-        else:
-            print("AI's Turn")
-            pile, count = ai.choose_action(game.piles, epsilon=False)
-            print(f"AI chose to take {count} from pile {pile}.")
-
-        # Make move
-        game.move((pile, count))
-
         # Check for winner
         if game.winner is not None:
             print()
@@ -642,3 +605,5 @@ def play(ai, human_player=1):
             winner = "Human" if game.winner == human_player else "AI"
             print(f"Winner is {winner}")
             return
+
+        # switch player

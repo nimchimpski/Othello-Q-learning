@@ -1,6 +1,6 @@
-from nim import train, play
+from othello import train, play
 
-ai = train(10000)
+# ai = train(10000)
 
 
     
@@ -9,6 +9,6 @@ ai = train(10000)
 
 
 
-play(ai,0)
+play(1,0)
 
 

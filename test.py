@@ -39,6 +39,11 @@ newgame.board = testboard
 
 #### TEST WHOSE TURN
 
+def test_whose_turn():
+    assert newgame.whose_turn(2) == (BLACK, WHITE)
+    assert newgame.whose_turn(3) == (WHITE, BLACK)
+    assert newgame.whose_turn(0) == (BLACK, WHITE)
+
 #### TEST MOVE
 # newgame.move((0,2))
 
@@ -63,5 +68,5 @@ newgame.board = testboard
 
 #### TEST PLAY
 
-play()
+# play()
 

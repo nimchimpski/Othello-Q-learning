@@ -52,10 +52,12 @@ class Othello():
         print()
        
         
-    def whose_turn(self):
+    def whose_turn(self, turnsplayed=None):
+        if turnsplayed is None:
+            turnsplayed = self.turnsplayed
         # print('\n+++whose_turn')
         # print(f'turnsplayed={self.turnsplayed}')
-        if self.turnsplayed %2 == 0:
+        if turnsplayed %2 == 0:
             self.player = BLACK
             self.enemy = WHITE
             # print(f'player now black?={self.player}')

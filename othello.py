@@ -37,7 +37,7 @@ class Othello():
         # print(f'turnsplayed={self.turnsplayed}')
         avacts = self.available_actions()
         # print(f'avacts={avacts}'    )
-        print('\n\n***OTHELLO***\n')
+        print('\n***OTHELLO***\n')
         
         for i, row in enumerate(self.board):
             for j, col in enumerate(row):
@@ -221,7 +221,7 @@ class Othello():
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
         """
-        print('+++availale_actions()')
+        # print('+++availale_actions()')
         if player is None:
             player = self.player
         if enemy is None:   
@@ -279,7 +279,7 @@ class Othello():
                 else:
                     continue
                     # print(f'alldirs_captured=false') 
-        print(f'actions={actions}')
+        # print(f'actions={actions}')
         self.availactions = actions
         return actions
    
@@ -629,17 +629,20 @@ def playterminal(player0=0, player1=1):
                 game.update_player()
                 
         inputmove = input(f"enter a move for {game.player}...")
+        # print(f'TERM inputmove={inputmove}')
+
         ####      CHECK FOR VALID INPUT
         if len(inputmove) != 2 and not inputmove.isdigit() :
-            print(f"Invalid move, try again.")
+            print(f"\nInvalid move, try again.")
             continue
         else:
             inputmove = tuple(int(i) for i in inputmove)
-            print(f"move={inputmove}")
+
         ####      CHECK FOR VALID MOVE
-        availactions = game.available_actions()    
-        if inputmove not in available_actions:
-            print(f"Invalid move, try again.")
+        availactions = game.available_actions()   
+        # print(f'TERM availactions={availactions}') 
+        if inputmove not in availactions:
+            print(f"\nInvalid move, try again.")
             continue
         else:
             game.move(inputmove, availactions)

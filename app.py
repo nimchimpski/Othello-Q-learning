@@ -36,14 +36,14 @@ class Gamedb(db.Model):
     dbid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     dbsessionid = db.Column(db.String, nullable=False)
     boardstate = db.Column(db.String, nullable=False)
-    human = db.Column(db.String, nullable=False)  ####      STORE HUMAN AS A STRING
+    player = db.Column(db.String, nullable=False)  ####      STORE player AS A STRING
 
-    def saveboard(self, sessionid, board, human=None):
+    def saveboard(self, sessionid, board, player=None):
         # print(f'+++SAVEBOARD---')
         self.dbsessionid = sessionid
         self.boardstate = json.dumps(board)  ####      STORE BOARD AS A STRING
-        if human is not None:
-            self.human = json.dumps(human)
+        if player is not None:
+            self.player = json.dumps(player)
         ####      COMMIT THE CHANGES TO THE DATABASE
         db.session.commit()
         return board
@@ -51,20 +51,29 @@ class Gamedb(db.Model):
 
     def getboard(self, sessionid):
         # print(f'+++GETBOARD---')
-        sessionrow = Gamedb.query.filter_by(dbsessionid=sessionid).first()
-        if sessionrow:
-            print(f'---sessionrow found= {sessionrow}')
-            return json.loads(sessionrow.boardstate)
+        db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
+        if db_row:
+            print(f'---db_row found= {db_row}')
+            return json.loads(db_row.boardstate)
         else:
-            print('+++getboard: no sessionrow in db---')
+            print('+++getboard: no db_row in db---')
             return None
 
     def __repr__(self):
 
-        return f"<Gamedb(dbid={self.dbid}, dbsessionid={self.dbsessionid}, boardstate={self.boardstate}, human={self.human})>"
+        return f"<Gamedb(dbid={self.dbid}, dbsessionid={self.dbsessionid}, boardstate={self.boardstate}, player={self.player})>"
 
 with app.app_context():
 db.create_all()
+
+def checkfordbrow(sessionid):
+    db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
+    if db_row:
+        print(f'---db_row found= {db_row}')
+        return True
+    else:
+        print('+++getboard: no db_row in db---')
+        return False
 
 @app.after_request
 def after_request(response):
@@ -84,6 +93,9 @@ def index():
         session['sessionid'] = str(uuid.uuid4())
         sessionid = session['sessionid']
     print(f'---sessionid={sessionid}')
+    if checkfordbrow(sessionid):
+        
+    game =Othello()
     return render_template('index.html')
 
 @app.route('/play', methods=['POST', 'GET'])
@@ -96,12 +108,15 @@ def play():
 
     ####      GET SESSION ID
     sessionid = session.get('sessionid')
+
     #### CHECK IF SESSION ROW EXISTS
-    sessionrow = Gamedb.query.filter_by(dbsessionid=sessionid).first()
-    if sessionrow == None:
-        print(f'---no sessionrow= {sessionrow}')
+    db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
+    if db_row == None:
+        print(f'---no db_row= {db_row}')
+
 
     
+
     #########      POST     #########
     if request.method == 'POST':
         print('>>>PLAY ROUTE POST')
@@ -109,48 +124,39 @@ def play():
         ####    print all json
         # print(f"\n--- request.json= {request.json} ---") 
 
-        #### CHECKC IF NEW GAME + INITIALISE
+        ####     CHECK IF NEW GAME + INITIALISE
         if request.json.get('newgame') == True:
             print('--- NEW GAME ---')
 
-              
-
-            #### DEAL WITH CHOSEN PLAYER
-            human = request.json.get('human')
-            # print(f"--- human chose to be : {human} ---")
-
             ####   RESET BOARD
-            board = othello.initial_state()
+            board = othello.create_board()
             print(f'---board initialised--{board}-')
-
-
-            # if no row in db for this sessionid, create one
-            print('---queried sessionrow---')
-            print(f'---existing sessionrow= {sessionrow}')
-            if not sessionrow:
-                print('---MAKING NEW SESSIONROW---')
-
-                sessionrow = Gamedb(dbsessionid=sessionid, boardstate=json.dumps(board), human=json.dumps(human))
-                db.session.add(sessionrow)
-
+            #### iF NO ROW IN DB FOR THIS SESSIONID, CREATE ONE
+            print('---queried db_row---')
+            print(f'---existing db_row= {db_row}')
+            if not db_row:
+                print('---MAKING NEW db_row---')
+                ####.   CREATE NEW ROW IN DB    
+                db_row = Gamedb(dbsessionid=sessionid, boardstate=json.dumps(board), player=json.dumps(player))
+                db.session.add(db_row)
             # INITIALISE BOARD IN DATABASE
-            sessionrow.saveboard(sessionid, board, human)
-            print(f'---sessionrow= {sessionrow}')
-            print(f'---initialised board saved---{sessionrow}')
+            db_row.saveboard(sessionid, board, player)
+            print(f'---db_row= {db_row}')
+            print(f'---initialised board saved---{db_row}')
 
         ####     HUMAN MOVE
         humanmove = request.json.get('humanmove')
         if humanmove != None:
             humanmove = request.json.get('humanmove')
             human = request.json.get('human')
-            # print(f"--- humanMove received: {humanmove} {type(humanmove)}---")
+            # print(f"--- humanMove received: {humanmove}{type(humanmove)}---")
             humanmovetuple = tuple(int(char) for char in humanmove)
             # print(f"--- movetuple= {humanmovetuple} ---")
             #### GET BOARD FROM DB
-            board = sessionrow.getboard(sessionid)
+            board = db_row.getboard(sessionid)
             # print(f"+++ board retrieved hm= {board} ---")
             ####  UPDATE BOARD WITH HUMAN MOVE  ####
-            board = ttt.result(board, humanmovetuple)
+            board = game.result(board, humanmovetuple)
             # print(f"--- board after human mv= {board} ---")
             ####   CHECK FOR GAME OVER
             winner = gameovercheck(human, board)
@@ -158,7 +164,7 @@ def play():
                 # print(f"--- GAMEOVER frm humanmove ={winner} ---")
                 return jsonify({'winner': winner})
             #### STORE BOARD IN DB
-            sessionrow.saveboard(sessionid, board)
+            db_row.saveboard(sessionid, board)
             ####    DETERMINE WHOSE TURN
             player = ttt.player(board)
             # print(f">>>player after human mv= {player} ---")
@@ -167,7 +173,7 @@ def play():
         print(f"--- AI MOVE")
         # time.sleep(0.5)
         #### GET BOARD FROM DB
-        board = sessionrow.getboard(sessionid)
+        board = db_row.getboard(sessionid)
         player = ttt.player(board)
         print(f">>>> player b4 ai mv= {player} ---")
         print(f"board retrieved b4 ai mv= {board} ---")
@@ -185,7 +191,7 @@ def play():
             # print(f"---aimovestr={aimove}{type(aimove)}")
             return jsonify({'winner': winner, 'aimove': aimovestr})
         #### STORE BOARD IN DB
-        sessionrow.saveboard(sessionid, board)
+        db_row.saveboard(sessionid, board)
         #### prepare response
         aimovestr = ''.join(str(e) for e in aimove)
         # print(f"---aimovestr={aimove}{type(aimove)}")

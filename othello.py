@@ -52,7 +52,6 @@ class Othello():
             print()
         print()
        
-        
     def update_player(self, turnsplayed=None):
         if turnsplayed is None:
             turnsplayed = self.turnsplayed
@@ -93,7 +92,6 @@ class Othello():
         # print(f'\n++++++++++++++++++++++++++++move()')
         if availactions is None:
             availactions = self.available_actions()
-        
         print(f'availactions={availactions}')
         # print(f'turnsplayed={self.turnsplayed}')
         # print(f'player={self.player}')
@@ -115,7 +113,6 @@ class Othello():
             bitstoflip = availactions.get(action)
         except AttributeError:
             print("ERROR! no bitstoflip in available_actions")
-
         # print(f'bitstoflip={bitstoflip}')
         if bitstoflip:
             for bit in bitstoflip:
@@ -133,7 +130,6 @@ class Othello():
             # print(f'GAME OVER! winner={self.winner}')
             return 
       
-
         ####       Update turnsplayed   
         self.turnsplayed += 1
         # print(f'turnsplayed={self.turnsplayed}')
@@ -647,22 +643,5 @@ def playterminal(player0=0, player1=1):
         else:
             game.move(inputmove, availactions)
         
-        # Let player make a move
-        # if game.player == human_player:
-        #     print("Your Turn")
-        #     while True:
-        #         pile = int(input("Choose Pile: "))
-        #         count = int(input("Choose Count: "))
-        #         if (pile, count) in available_actions:
-        #             break
-        #         print("Invalid move, try again.")
-
-        # Check for winner
-        # if game.winner is not None:
-        #     print()
-        #     print("GAME OVER")
-        #     winner = "Human" if game.winner == human_player else "AI"
-        #     print(f"Winner is {winner}")
-        #     return
-
-        # switch player
+    if __name__ == "__main__":
+        app.run(debug=True)

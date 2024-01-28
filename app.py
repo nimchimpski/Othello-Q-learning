@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, request, jsonify, redirect, u
 from flask_session import Session
 from tempfile import mkdtemp
 from flask_sqlalchemy import SQLAlchemy
+
 from werkzeug.middleware.proxy_fix import ProxyFix
 import sys
 import time
@@ -24,9 +25,9 @@ app.config['SQLALCHEMY_ECHO'] = True
 
 ####      SET THE APP TO DEBUG MODE
 environment = os.environ.get('FLASK_ENV', 'production')
-app.config['ENV'] = 'environment'
+app.config['ENV'] = environment
 if environment == 'development':
-    app.config['DESBUG'] = True
+    app.config['DEBUG'] = True
 else:
     app.config['DEBUG'] = False
 # app.debug = False
@@ -36,7 +37,8 @@ class Gamedb(db.Model):
     dbid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     dbsessionid = db.Column(db.String, nullable=False)
     boardstate = db.Column(db.String, nullable=False)
-    player = db.Column(db.String, nullable=False)  ####      STORE player AS A STRING
+    turnsplayed = db.Column(db.Integer, nullable=False, default=0)
+    human = db.Column(db.String, nullable=False)
 
     def saveboard(self, sessionid, board, player=None):
         # print(f'+++SAVEBOARD---')
@@ -64,7 +66,7 @@ class Gamedb(db.Model):
         return f"<Gamedb(dbid={self.dbid}, dbsessionid={self.dbsessionid}, boardstate={self.boardstate}, player={self.player})>"
 
 with app.app_context():
-db.create_all()
+    db.create_all()
 
 def checkfordbrow(sessionid):
     db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
@@ -93,9 +95,7 @@ def index():
         session['sessionid'] = str(uuid.uuid4())
         sessionid = session['sessionid']
     print(f'---sessionid={sessionid}')
-    if checkfordbrow(sessionid):
         
-    game =Othello()
     return render_template('index.html')
 
 @app.route('/play', methods=['POST', 'GET'])
@@ -114,9 +114,9 @@ def play():
     if db_row == None:
         print(f'---no db_row= {db_row}')
 
-
+####      CREATE GAME INSTANCE
+    game = othello.Othello()
     
-
     #########      POST     #########
     if request.method == 'POST':
         print('>>>PLAY ROUTE POST')
@@ -155,53 +155,57 @@ def play():
             #### GET BOARD FROM DB
             board = db_row.getboard(sessionid)
             # print(f"+++ board retrieved hm= {board} ---")
+
             ####  UPDATE BOARD WITH HUMAN MOVE  ####
-            board = game.result(board, humanmovetuple)
+            availactions = game.available_actions()
+            board = game.move(move, availactions)
             # print(f"--- board after human mv= {board} ---")
+
             ####   CHECK FOR GAME OVER
-            winner = gameovercheck(human, board)
-            if winner is not None:
-                # print(f"--- GAMEOVER frm humanmove ={winner} ---")
-                return jsonify({'winner': winner})
+            if game.gameover():
+                gameover = True
+                winner = game.calc_winner()
+                ####  SEND RESPONSE WITH WINNER 
+            return jsonify({'gameover': gameover, 'winner': winner, 'aimove': aimovestr})
+
             #### STORE BOARD IN DB
             db_row.saveboard(sessionid, board)
             ####    DETERMINE WHOSE TURN
-            player = ttt.player(board)
-            # print(f">>>player after human mv= {player} ---")
+            game.update_player()
 
-        ####  AI  MOVE
+        ####     AI  MOVE
         print(f"--- AI MOVE")
-        # time.sleep(0.5)
-        #### GET BOARD FROM DB
+        ####    GET BOARD FROM DB
         board = db_row.getboard(sessionid)
-        player = ttt.player(board)
         print(f">>>> player b4 ai mv= {player} ---")
         print(f"board retrieved b4 ai mv= {board} ---")
         #### ai makes move
-        aimove = ttt.minimax(board)
+        aimove = ai.choose_action(board)
         # print(f"\n---aimove={aimove}")
-        #### update board
-        board = ttt.result(board, aimove)
+
+        ####        UPDATE BOARD
+        availactions = game.available_actions()
+        board = game.move(move, availactions)
         print(f"--- board after ai mv= {board} ---")
         ####   CHECK FOR GAME OVER
-        winner = gameovercheck('AI', board)
-        if winner is not None:
+        if game.gameover():
+            gameover = True
+            winner = game.calc_winner()
+        if winner is not None: # test line
             print(f"--- Ai is winner={winner} ---")
+
+        ####    PREPARE RESPONSE
             aimovestr = ''.join(str(e) for e in aimove)
             # print(f"---aimovestr={aimove}{type(aimove)}")
-            return jsonify({'winner': winner, 'aimove': aimovestr})
+            return jsonify({'gameover': gameover, 'winner': winner, 'aimove': aimovestr})
         #### STORE BOARD IN DB
         db_row.saveboard(sessionid, board)
         #### prepare response
-        aimovestr = ''.join(str(e) for e in aimove)
         # print(f"---aimovestr={aimove}{type(aimove)}")
         # print(f"---aimove={aimove}{type(aimove)}")
 
         return jsonify({'aimove': aimovestr})
     
-
-
-
 
 if __name__ == '__main__':
     app.run()

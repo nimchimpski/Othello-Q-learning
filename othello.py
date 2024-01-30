@@ -52,6 +52,19 @@ class Othello():
             print()
         print()
        
+    def switchplayer(self, player):
+        if player == BLACK:
+            if available_moves(player):
+                return WHITE
+        else:
+            return BLACK
+
+    def calculate_opponent(self, player):
+        if player == BLACK:
+            return WHITE
+        else:   
+            return BLACK
+
     def update_player(self, turnsplayed=None):
         if turnsplayed is None:
             turnsplayed = self.turnsplayed
@@ -137,7 +150,7 @@ class Othello():
         # print(f'----ENF OF MOVE()')
         return self.board
 
-    def direction_checker(self, cell, direction, player=None, enemy=None):
+    def direction_checker(self, cell, direction, player=None):
 
         #### MAKE PRINTABLE DIRECTIONS
         if direction == (-1, -1):
@@ -162,8 +175,6 @@ class Othello():
         ####      CHECK FOR TEST CONDITIONS
         if player is None:
             player = self.player
-        if enemy is None:
-            enemy = self.enemy
 
         ####       SET UP VARIABLES
         captured = set()
@@ -187,7 +198,8 @@ class Othello():
                 return None
             # print(f'first nextcell calc={nextcell}')
 
-            
+            ### CALCULATE ENEMY
+            enemy = self.calculate_opponent(player)
 
             ####       IF NEXTCELL IS NOT ENEMY, ABORT?
             if not self.board[nextcell[0]][nextcell[1]] == enemy:
@@ -213,17 +225,15 @@ class Othello():
                 # captured = set()
                 return None
           
-    def available_actions(self, player=None, enemy=None):
+    def available_actions(self, player=None):
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
         """
         # print('+++availale_actions()')
         if player is None:
             player = self.player
-        if enemy is None:   
-            enemy = self.enemy
         actions = {}
-        ####       create the directions
+        ####       CREATE THE DIRECTIONS
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
         # directions = [(0,-1), (-1,-1)]
         # print(f'directions={directions}')
@@ -233,31 +243,19 @@ class Othello():
             # print(f' x= {x}')
             for j, content in enumerate(row):
                 cell = (i,j)
-                
-
-        ####        TEST BLOCK
-        # if True: # for testing
-        #     if True:  # for testing
-        #         cell = (1,2) # for testing
-        #         content = self.board[cell[0]][cell[1]] # for testing
-        ####       END TEST BLOCK
 
                 # print(f'\n >>>CHECKING THIS = {cell}')
-
-                ####       is the cell empty?
                 if content != EMPTY:
-                    # print(f'CELL NOT EMPTY')  
                     continue
                 
                 # cell = (int(cell[0]), int(cell[1]))
                 # print(f'cell={cell}, type={type(cell[0])}')
-
                 alldirscaptured = set()
                 ####       FOR EACH DIRECTION
                 for direction in directions:
                     
                     ####        IF VALID , ADD MOVE TO SET, ADD CAPTURED PIECES TO SET
-                    onedircaptured = self.direction_checker(cell, direction, player , enemy)
+                    onedircaptured = self.direction_checker(cell, direction, player )
                     # print(f'onedir_captured={onedircaptured}')
                     ####    IF THERE IS ANY ADD TO TOAL CAPTURED FOR THIS cell
                     if onedircaptured:

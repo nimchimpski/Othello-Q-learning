@@ -17,55 +17,47 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'sharedstatic1.css')}}">
 </head>
 
-<body onload="init()">
+<body >
     <H1>OTHELLO</P></H1>
     <!-- Your HTML code for game board goes here -->
     <header id="messages">
-        <p id="message1">Choose your player</p>
-        <p id="message2">Black plays first</p>
+       
+        <div id="message1"> Choose your player&nbsp;&nbsp;  
+        <div id="chooseplayer">
+           
+            
+                <button id="X" class="" onclick="othellogame.startGame(this.id)">
+                <div class="disk blackdisk"></div>
+                </button>
+                <button id="O" class="" onclick="othellogame.startGame(this.id)" >
+                    <div class="disk whitedisk"></div>
+                </button>
+                
+            </div>
+        </div>
+        <p id="message2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Black plays first</p>
     </header>
     <div id="container">
-        <div id="chooseplayer">
-    
-        <div>
-            <button id="X"  onclick="othellogame.startGame(this.id)">
-            <div class="disk black-disk"></div>
-            </button>
-            <button id="O" onclick="othellogame.startGame(this.id)" >
-                <div class="disk white-disk"></div>
-            </button>
-            </div>  
-        </div>
-        <div id="board">
-            <table>
-                <tr>
-                    <td id="00" class="cell"></td>
-                    <td id="01" class="cell"></td>
-                    <td id="02" class="cell"></td>
-                    <td id="03" class="cell"></td>
-                </tr>
-                <tr>
-                    <td id="10" class="cell"></td>
-                    <td id="11" class="cell"></td>
-                    <td id="12" class="cell"></td>
-                    <td id="13" class="cell"></td>
-                </tr>
-                <tr>
-                    <td id="20" class="cell"></td>
-                    <td id="21" class="cell"></td>
-                    <td id="22" class="cell"></td>
-                    <td id="23" class="cell"></td>
-                </tr>
-                <tr>
-                    <td id="30" class="cell"></td>
-                    <td id="31" class="cell"></td>
-                    <td id="32" class="cell"></td>
-                    <td id="33" class="cell"></td>
-                </tr>
-            </table>
-        </div>
+        
+    <!-- loop to build the board from size  -->
+    <div id="board"> 
+    <table>
+        {% for row in range(size) %}
+        <tr>
+            {% for col in range(size) %}
+            <td>
+            <div class='cell'>
+            <div id="{{row}}{{col}}" class=""></div>
+            </div>
+        </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
     </div>
-    <div class = "textboxcontainer">
+    <div id="tbcont_othello" class = "textboxcontainer">
     <section id = notes class="textbox">
         <p>blah</p>
         <br><br><br>
@@ -79,116 +71,12 @@
         </p>
     </section>
 </div>
-   
+
    
     <script src="{{ url_for('static', filename='othelloscript.js') }}"></script>
 </body>
 </html>
 <style>
-   /* @import url('https://fonts.googleapis.com/css2?family=Gruppo&display=swap');
-
-    body {
-      
-        background-color: #000000;
-        color: #FFFFFF;
-        font-family: 'Gruppo', sans-serif;
-        caret-color: transparent;
-        padding: 15px;
-        height: 100vh;
-    }
-    H1 {
-        font-size: 2rem;
-        text-align: center
-    }
-    #messages {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        
-        margin-bottom: 15px;
-    }
-    button {
-        background-color: #000000;
-        color: #FFFFFF;
-        border: #FFFFFF 1px solid;
-        border-radius: 5px;
-        padding-left: 15px;
-        padding-right: 15px;
-        padding-top: 0px;
-        padding-bottom: 0px;
-        margin: 5px;
-        font-size: 5rem;
-        font-family: 'Gruppo', sans-serif;
-        top: 2px;
-        
-    }
-    #container {
-        position: relative;
-        padding-top: 0px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-  
-    }
-    #chooseplayer {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        
-    }
-    #board {
-        position: absolute;
-        top:0px;
-        display: none;
-    }
-
-    table {
-        table-layout: fixed;
-        width: 300px;
-        height: 300px;
-        margin-left: auto;
-        margin-right: auto;
-        border: #fdfcfc 1px solid;
-        border-collapse: collapse;
-        
-    }
-    td {
-     
-        position: relative;
-        top: -8px;
-        width: 100px;
-        height: 100px;
-        border: #fdfcfc 1px solid;
-    
-        text-align: center;
-        vertical-align: middle;
-        font-size: 5rem;
-    }
-    .textboxcontainer {
-        position: absolute;
-        top: 520px;
-
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        left: 0;
-        right: 0;
-        margin-left: auto;
-        margin-right: auto;
-    
-        background-color: #000000;
-        color: #ffffff;
-        padding: 0px 0px 30px 0px;
-        overflow: scroll;
-    }
-    .textbox {
-        max-width: 500px;
-        border: #FFFFFF 1px solid;
-        padding: 20px 10px 20px 10px;
-    } */
+ 
    
 </style>

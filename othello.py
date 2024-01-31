@@ -2,13 +2,13 @@ import math
 import random
 import time
 
-EMPTY = ' '
-BLACK = 'X'
-WHITE = 'O'
+EMPTY = '     '
+BLACK = 'BLACK'
+WHITE = 'WHITE'
 
 class Othello():
 
-    def __init__(self, size=4, human=BLACK):
+    def __init__(self, size=4):
         """
         Initialize game board.
         Each game board has
@@ -16,15 +16,11 @@ class Othello():
         """
         # (print('\n+++init'))
         self.size = size
-        self.board = self.create_board()
-        # self.board = [[WHITE,WHITE, WHITE],
-        #               [EMPTY,WHITE,WHITE],
-        #               [WHITE,WHITE,BLACK]]
-        self.turnsplayed = 0
+        # self.turnsplayed = 0
         self.player = BLACK
         self.enemy = WHITE
         # print(f'player={self.player}')
-        self.human = human
+        self.human = BLACK
         # print(f'human={human}')
         self.winner = None
         # print(f'----end of init')
@@ -39,18 +35,33 @@ class Othello():
         # print(f'avacts={avacts}'    )
         print('\n***OTHELLO***\n')
         
-        for i, row in enumerate(self.board):
+        for i, row in enumerate(board):
             for j, col in enumerate(row):
-                if self.board[i][j] == BLACK:
+                if board[i][j] == BLACK:
                     print("X", end="")
-                elif self.board[i][j]== WHITE:
+                elif board[i][j]== WHITE:
                     print("O", end="")
                 elif (i,j) in avacts:
                     print("*", end="")
-                elif self.board[i][j]== EMPTY:
+                elif board[i][j]== EMPTY:
                     print(".", end="")
             print()
         print()
+
+# BOARD SHOWING AVAILABLE MOVES
+    def boardforresponse(self, board=None,  player=None):  
+        # print('# ++++boardforresponse')
+        if board is None:
+            board = self.board
+        if player is None:
+            player = self.player
+        # print(f'player={player}')
+        for cell in self.available_actions( player, board):
+            # print(f'cell={cell}')
+            board[cell[0]][cell[1]] = '*'
+        print(f"response() board={board}")
+        return board
+        
        
     def switchplayer(self, player):
         if player == BLACK:
@@ -65,21 +76,7 @@ class Othello():
         else:   
             return BLACK
 
-    def update_player(self, turnsplayed=None):
-        if turnsplayed is None:
-            turnsplayed = self.turnsplayed
-        # print('\n+++update_player')
-        # print(f'turnsplayed={self.turnsplayed}')
-        if turnsplayed %2 == 0:
-            self.player = BLACK
-            self.enemy = WHITE
-            # print(f'player now black?={self.player}')
-        else:
-            self.player = WHITE
-            self.enemy = BLACK
-            # print(f'player now white?={self.player}')
-        # print(f'end of update_player')
-        return self.player, self.enemy
+
 
     def create_board(self):
         # print('+++create_board')
@@ -96,7 +93,7 @@ class Othello():
         board[center+1][center+1] = WHITE
         return board
 
-    def move(self, action, availactions=None):
+    def move(self, action, board, player, availactions=None):
         """
         Make the move `action` for the current player.
         `action` must be a tuple `(i,j)`.
@@ -104,9 +101,9 @@ class Othello():
         """
         # print(f'\n++++++++++++++++++++++++++++move()')
         if availactions is None:
-            availactions = self.available_actions()
+            availactions = self.available_actions(board, player)
         print(f'availactions={availactions}')
-        # print(f'turnsplayed={self.turnsplayed}')
+     
         # print(f'player={self.player}')
 
         ####       Check for errors
@@ -129,10 +126,10 @@ class Othello():
         # print(f'bitstoflip={bitstoflip}')
         if bitstoflip:
             for bit in bitstoflip:
-                self.board[bit[0]][bit[1]] = self.player
+                board[bit[0]][bit[1]] = self.player
         
           #####     MARK BOARD WITH MOVE
-        self.board[action[0]][action[1]] = self.player
+        board[action[0]][action[1]] = self.player
         self.printboard()
         # print(f'board after flip')
         # print(f'{self.player} just moved at {action}')
@@ -144,13 +141,10 @@ class Othello():
             return 
       
         ####       Update turnsplayed   
-        self.turnsplayed += 1
-        # print(f'turnsplayed={self.turnsplayed}')
-        self.update_player()
-        # print(f'----ENF OF MOVE()')
-        return self.board
+        self.switchplayer()
+        return board
 
-    def direction_checker(self, cell, direction, player=None):
+    def direction_checker(self, cell, direction, player, board):
 
         #### MAKE PRINTABLE DIRECTIONS
         if direction == (-1, -1):
@@ -173,8 +167,7 @@ class Othello():
         # print(f'+++++direction from {cell} in direction { compass}')
         
         ####      CHECK FOR TEST CONDITIONS
-        if player is None:
-            player = self.player
+
 
         ####       SET UP VARIABLES
         captured = set()
@@ -202,7 +195,7 @@ class Othello():
             enemy = self.calculate_opponent(player)
 
             ####       IF NEXTCELL IS NOT ENEMY, ABORT?
-            if not self.board[nextcell[0]][nextcell[1]] == enemy:
+            if not board[nextcell[0]][nextcell[1]] == enemy:
                 # print(f'NOT ENEMY NEIGHBOUR')
                 return None
 
@@ -215,7 +208,7 @@ class Othello():
             ####       LOOK FOR A PLAYER PIECE IN THAT DIRECTION TO VALIDATE MOVE
             further = calcnextcell()
             # print(f'calc2 for player piece at end ={further}')
-            if further and (self.board[further[0]][further[1]] == player):
+            if further and (board[further[0]][further[1]] == player):
                 # print(f'FOUND PLAYER AT END! {nextcell}')
                 # print(f'captured in this direction={captured}')
                 return captured
@@ -225,13 +218,12 @@ class Othello():
                 # captured = set()
                 return None
           
-    def available_actions(self, player=None):
+    def available_actions(self, player, board):
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
         """
         # print('+++availale_actions()')
-        if player is None:
-            player = self.player
+        
         actions = {}
         ####       CREATE THE DIRECTIONS
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
@@ -239,7 +231,7 @@ class Othello():
         # print(f'directions={directions}')
 
         ####        FOR EACH BOARD cell
-        for i, row in enumerate(self.board):
+        for i, row in enumerate(board):
             # print(f' x= {x}')
             for j, content in enumerate(row):
                 cell = (i,j)
@@ -255,7 +247,7 @@ class Othello():
                 for direction in directions:
                     
                     ####        IF VALID , ADD MOVE TO SET, ADD CAPTURED PIECES TO SET
-                    onedircaptured = self.direction_checker(cell, direction, player )
+                    onedircaptured = self.direction_checker(cell, direction, player, board )
                     # print(f'onedir_captured={onedircaptured}')
                     ####    IF THERE IS ANY ADD TO TOAL CAPTURED FOR THIS cell
                     if onedircaptured:
@@ -286,7 +278,7 @@ class Othello():
             board = self.board
         black_score = 0
         white_score = 0
-        for row in self.board:
+        for row in board:
             for cell in row:
                 if cell == BLACK:
                     black_score += 1
@@ -315,7 +307,7 @@ class Othello():
         if self.winner is not None:
             return True
         ####    CHECK IF BOARD IS FULL
-        if not any(cell == EMPTY for row in self.board for cell in row):
+        if not any(cell == EMPTY for row in board for cell in row):
             return True
 
         ####   CHECK IF NEITHER PLAYER HAS ANY VALID MOVES

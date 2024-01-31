@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-0QF4XKGKKH"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-0QF4XKGKKH');
-</script>
+
     <title>Othello game using reinforcement learning</title>
     <meta name = "description" content = "Othello game using reinforcement learning">
     <meta name = "robots" content = "index, follow">
@@ -19,20 +12,20 @@
 
 <body >
     <H1>OTHELLO</P></H1>
-    <!-- Your HTML code for game board goes here -->
+    <!-- BOARD -->
     <header id="messages">
        
-        <div id="message1"> Choose your player&nbsp;&nbsp;  
+        <div id="message1box">
+            <div id="message1"> Choose your player&nbsp;&nbsp;  
+        </div>        
+
         <div id="chooseplayer">
-           
-            
-                <button id="X" class="" onclick="othellogame.startGame(this.id)">
+                <button id="BLACK" class="" onclick="game.startGame(this.id)">
                 <div class="disk blackdisk"></div>
                 </button>
-                <button id="O" class="" onclick="othellogame.startGame(this.id)" >
+                <button id="WHITE" class="" onclick="game.startGame(this.id)" >
                     <div class="disk whitedisk"></div>
                 </button>
-                
             </div>
         </div>
         <p id="message2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Black plays first</p>
@@ -42,9 +35,9 @@
     <!-- loop to build the board from size  -->
     <div id="board"> 
     <table>
-        {% for row in range(size) %}
+        {% for row in range(4) %}
         <tr>
-            {% for col in range(size) %}
+            {% for col in range(4) %}
             <td>
             <div class='cell'>
             <div id="{{row}}{{col}}" class=""></div>

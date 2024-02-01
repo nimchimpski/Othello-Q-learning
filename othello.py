@@ -17,55 +17,31 @@ class Othello():
         # (print('\n+++init'))
         self.size = size
         # self.turnsplayed = 0
-        self.player = BLACK
+        self.player = 'human'
         self.enemy = WHITE
         # print(f'player={self.player}')
         self.human = BLACK
         # print(f'human={human}')
         self.winner = None
+        
         # print(f'----end of init')
         # self.availactions = self.available_actions()
-    
-    def printboard(self):
-        # print('\n+++printboard')
-        # print(f'player={self.player}')
-        # print(f'enemy={self.enemy}')
-        # print(f'turnsplayed={self.turnsplayed}')
-        avacts = self.available_actions()
-        # print(f'avacts={avacts}'    )
-        print('\n***OTHELLO***\n')
-        
-        for i, row in enumerate(board):
-            for j, col in enumerate(row):
-                if board[i][j] == BLACK:
-                    print("X", end="")
-                elif board[i][j]== WHITE:
-                    print("O", end="")
-                elif (i,j) in avacts:
-                    print("*", end="")
-                elif board[i][j]== EMPTY:
-                    print(".", end="")
-            print()
-        print()
+
 
 # BOARD SHOWING AVAILABLE MOVES
-    def boardforresponse(self, board=None,  player=None):  
-        # print('# ++++boardforresponse')
-        if board is None:
-            board = self.board
-        if player is None:
-            player = self.player
+    def boardforresponse(self, board,  player):  
+        print('# ++++boardforresponse')
+    
         # print(f'player={player}')
-        for cell in self.available_actions( player, board):
+        for cell in self.available_actions( board, player):
             # print(f'cell={cell}')
             board[cell[0]][cell[1]] = '*'
         print(f"response() board={board}")
         return board
-        
        
-    def switchplayer(self, player):
+    def switchplayer(self, board, player):
         if player == BLACK:
-            if available_moves(player):
+            if self.available_actions(board, player):
                 return WHITE
         else:
             return BLACK
@@ -75,8 +51,6 @@ class Othello():
             return WHITE
         else:   
             return BLACK
-
-
 
     def create_board(self):
         # print('+++create_board')
@@ -93,13 +67,17 @@ class Othello():
         board[center+1][center+1] = WHITE
         return board
 
-    def move(self, action, board, player, availactions=None):
+    def move(self, board, action, player, availactions=None):
         """
         Make the move `action` for the current player.
         `action` must be a tuple `(i,j)`.
         return the updated board
         """
-        # print(f'\n++++++++++++++++++++++++++++move()')
+        print(f'\n++++move(), ')
+        print(f'board={board}')
+        print(f'action={action}')
+        print(f'player={player}')
+
         if availactions is None:
             availactions = self.available_actions(board, player)
         print(f'availactions={availactions}')
@@ -108,41 +86,46 @@ class Othello():
 
         ####       Check for errors
         if self.winner is not None:
+            print(f'---self.winner={self.winner}')
             raise Exception("Game already won")
 
         #####      IS ACTION VALID
-        try:
-            availactions.get(action)
-        except ValueError:
-            print(f"\n>>>>Error:  not in available_actions, or availactions is problematic")
+        # try:
+        #     availactions.get(action)
+        # except ValueError:
+        #     print(f"\n>>>>Error:  not in available_actions, or availactions is problematic")
 
-        ####       FLIP CAPTURED PIECES
+        ####     GET BITS TO FLIP
         # print(f'action={action}'    )
         # print(f'availactions={availactions}')
         try:
             bitstoflip = availactions.get(action)
         except AttributeError:
-            print("ERROR! no bitstoflip in available_actions")
-        # print(f'bitstoflip={bitstoflip}')
+            print("ERROR! action not in available_actions. ")
+        print(f'bitstoflip={bitstoflip}')
+
+        ####  MARK BOARD WITH FLIPPED PIECES
         if bitstoflip:
             for bit in bitstoflip:
-                board[bit[0]][bit[1]] = self.player
+                board[bit[0]][bit[1]] = player
+        print(f'board with just  flips')
         
-          #####     MARK BOARD WITH MOVE
-        board[action[0]][action[1]] = self.player
-        self.printboard()
-        # print(f'board after flip')
-        # print(f'{self.player} just moved at {action}')
+          #####     MARK BOARD WITH ACTUAL MOVE
+        board[action[0]][action[1]] = player
+        print(f'board with flips and move= {board}')
 
         ####       CHECK IF GAME OVER
-        if self.gameover():
-            self.winner = self.calc_winner()
-            # print(f'GAME OVER! winner={self.winner}')
+        if self.gameover(board):
+            self.winner = self.calc_winner(board)
+            print(f'GAME OVER! winner={self.winner}')
             return 
       
         ####       Update turnsplayed   
-        self.switchplayer()
-        return board
+        newplayer = self.switchplayer(board, player)
+        player = newplayer
+        print(f'newplayer now move is done={newplayer}')
+
+        return board, player
 
     def direction_checker(self, cell, direction, player, board):
 
@@ -218,7 +201,7 @@ class Othello():
                 # captured = set()
                 return None
           
-    def available_actions(self, player, board):
+    def available_actions(self, board, player):
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
         """
@@ -269,13 +252,12 @@ class Othello():
         self.availactions = actions
         return actions
    
-    def scores(self, board=None):
+    def scores(self, board):
         """
         Returns a tuple (black_score, white_score) for the current game state.
         """
         # print(f'+++scores()')
-        if board is None:
-            board = self.board
+    
         black_score = 0
         white_score = 0
         for row in board:
@@ -288,8 +270,8 @@ class Othello():
         # print(f'white_score={white_score}')
         return (black_score, white_score)
 
-    def calc_winner(self):
-        black, white = self.scores()
+    def calc_winner(self, board):
+        black, white = self.scores(board)
         if black > white:
             self.winner = BLACK
             return BLACK
@@ -299,7 +281,7 @@ class Othello():
         else:
             return None
 
-    def gameover(self):
+    def gameover(self, board ):
         """
         Returns True if game is over, False otherwise.
         """
@@ -311,7 +293,7 @@ class Othello():
             return True
 
         ####   CHECK IF NEITHER PLAYER HAS ANY VALID MOVES
-        if (not self.available_actions() and not self.available_actions(self.enemy, self.player)):
+        if (not self.available_actions(  board, WHITE) and not self.available_actions(board, BLACK)):
             return True
         # print(f'----end of gameover()')
         return False
@@ -569,69 +551,69 @@ def train(n):
     return player
 
 
-def playterminal(player0=0, player1=1):
-    """
-    Play game between 2 humans or human game against the AI.
-    `player0 = AI, human_player` can be set to 0 or 1 to specify whether
-    human player moves first or second.
-    """
-    # Create new game
-    game = Othello()
+# def playterminal(player0=0, player1=1):
+#     """
+#     Play game between 2 humans or human game against the AI.
+#     `player0 = AI, human_player` can be set to 0 or 1 to specify whether
+#     human player moves first or second.
+#     """
+#     # Create new game
+#     game = Othello()
 
-    # If no player order set, choose human's order randomly
-    if game.human is None:
-        game.human = random.randint(0, 1)
+#     # If no player order set, choose human's order randomly
+#     if game.human is None:
+#         game.human = random.randint(0, 1)
 
 
 
-    # Game loop
-    while True:
+#     # Game loop
+#     while True:
 
-        # Print board
-        game.printboard()
-        print('. is empty')
-        print('* is available move')
-        print(f'00 is top left, 0{game.size-1} is top right')
-        if game.turnsplayed == 0:
-            print(f'X plays first')
-        print()
-        ####     CHECK FOR GAME OVER
+#         # Print board
+#         # game.printboard()
+#         print('. is empty')
+#         print('* is available move')
+#         print(f'00 is top left, 0{game.size-1} is top right')
+#         if game.turnsplayed == 0:
+#             print(f'X plays first')
+#         print()
+#         ####     CHECK FOR GAME OVER
 
-        if game.gameover():
-            game.calc_winner()
-            print(f'GAME OVER! winner={game.winner}')
-            playagain = input("Play again? (y/n): ")
-            if playagain == 'y':
-                game = Othello()
-                continue
-            else:
-                return
+#         if game.gameover(board, player):
+#             game.calc_winner(board)
+#             print(f'GAME OVER! winner={game.winner}')
+#             playagain = input("Play again? (y/n): ")
+#             if playagain == 'y':
+#                 game = Othello()
+#                 continue
+#             else:
+#                 return
 
-            # CHECK IF AVAILABLE ACTIONS FOR BLACK
-        if not game.available_actions():
-                print(f"no available moves for {game.player}")
-                print(f"{game.enemy} to play")
-                game.turnsplayed += 1
-                game.update_player()
+#             # CHECK IF AVAILABLE ACTIONS FOR BLACK
+#         if not game.available_actions(board, BLACK):
+#                 print(f"no available moves for {game.player}")
+#                 print(f"{game.enemy} to play")
+#                 game.turnsplayed += 1
+#                 game.update_player()
                 
-        inputmove = input(f"enter a move for {game.player}...")
-        # print(f'TERM inputmove={inputmove}')
+#         inputmove = input(f"enter a move for {game.player}...")
+#         # print(f'TERM inputmove={inputmove}')
 
-        ####      CHECK FOR VALID INPUT
-        if len(inputmove) != 2 and not inputmove.isdigit() :
-            print(f"\nInvalid move, try again.")
-            continue
-        else:
-            inputmove = tuple(int(i) for i in inputmove)
+#         ####      CHECK FOR VALID INPUT
+#         if len(inputmove) != 2 and not inputmove.isdigit() :
+#             print(f"\nInvalid move, try again.")
+#             continue
+#         else:
+#             inputmove = tuple(int(i) for i in inputmove)
 
-        ####      CHECK FOR VALID MOVE
-        availactions = game.available_actions()   
-        # print(f'TERM availactions={availactions}') 
-        if inputmove not in availactions:
-            print(f"\nInvalid move, try again.")
-            continue
-        else:
-            game.move(inputmove, availactions)
+#         ####      CHECK FOR VALID MOVE
+#         availactions = game.available_actions()   
+#         # print(f'TERM availactions={availactions}') 
+#         if inputmove not in availactions:
+#             print(f"\nInvalid move, try again.")
+#             continue
+#         else:
+#             game.move(inputmove, availactions)
         
-    if __name__ == "__main__":
+if __name__ == "__main__":
         app.run(debug=True)

@@ -40,25 +40,25 @@ class Gamedb(db.Model):
     human = db.Column(db.String, nullable=False)
 
     def saveboard(self, sessionid, board, player, human):
-        print(f'+++SAVEBOARD---')
+        # print(f'+++SAVEBOARD---')
         self.dbsessionid = sessionid
         self.boardstate = json.dumps(board)  ####      STORE BOARD AS A STRING
         self.player = json.dumps(player)
         self.human = json.dumps(human)
         ####      COMMIT THE CHANGES TO THE DATABASE
         db.session.commit()
-        print(f'---db_row saved= {self}')
+        # print(f'---db_row saved= {self}')
         return board
 
 
     def getboard(self, sessionid):
-        print(f'+++GETBOARD---')
+        # print(f'+++GETBOARD---')
         db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
         if db_row:
-            print(f'---db_row found= {db_row}')
+            # print(f'---db_row found= {db_row}')
             return json.loads(db_row.boardstate)
         else:
-            print('+++getboard: no db_row in db---')
+            # print('+++getboard: no db_row in db---')
             return None
 
     def __repr__(self):
@@ -71,10 +71,10 @@ with app.app_context():
 def checkfordbrow(sessionid):
     db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
     if db_row:
-        print(f'+++db_row found= {db_row}')
+        # print(f'+++db_row found= {db_row}')
         return True
     else:
-        print('+++getboard: no db_row in db---')
+        print('+++checkfordbrow: no db_row in db---')
         return False
 
 @app.after_request
@@ -97,9 +97,11 @@ def index():
         print('---no sessionid in session---')
         session['sessionid'] = str(uuid.uuid4())
         sessionid = session['sessionid']
-    print(f'---sessionid={sessionid}')
+    # print(f'---sessionid={sessionid}')
+    game = othello.Othello()
+    size = game.size
     # render page with size of board variable
-    return render_template('index.html')
+    return render_template('index.html', size=size)
 
 @app.route('/play', methods=['POST', 'GET'])
 def play():
@@ -108,37 +110,38 @@ def play():
     EMPTY = '*'
     BLACK = 'BLACK'
     WHITE = 'WHITE'
-    #### player is 'HUMAN' or 'AI'
-    #### playercol is 'BLACK' or 'WHITE'
+    winner = None
 
     ####      GET SESSION ID
     sessionid = session.get('sessionid')
 
     ####      CREATE GAME INSTANCE
-    game = othello.Othello(4)
+    game = othello.Othello()
     
     ####      GET THE DB ROW
     db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
     if not db_row:
         print('---no db_row in db---')
-    else:
-        print(f'---db_row found= {db_row}')
+    # else:
+        # print(f'---db_row found= ')
        
    
     #########      POST     #########
     if request.method == 'POST':
         # print('>>>PLAY ROUTE POST')
 
-        ####    print all json
+        ####    PRINT ALL JSON
         print(f"\n--- request.json= {request.json} ---") 
 
+        ####    GET VARIABLES FROM JSON
         player = request.json.get('player')
-        print(f'---player set from json = {player}---')
+        # print(f'---player set from json = {player}---')
         human = request.json.get('human')
         if human == 'BLACK':
             ai = 'WHITE'
         else:
             ai = 'BLACK'
+
         ####     CHECK IF NEW GAME + INITIALISE
         if request.json.get('newgame') == True:
             assert request.json.get('human') != True
@@ -146,14 +149,12 @@ def play():
             ####   RESET BOARD
             board = game.create_board()
             # print(f'---board initialised--{board}-')
-            human = request.json.get('human')    
             # print(f'---player= {human}---')
-            player = human # always black 1st move
-            print(f'\n*******player= {player}---')
+            # print(f'\n*******player= {player}---')
 
             ####    CREATE NEW ROW INSTANCE
             if not db_row:
-                print('---making new db_row--- ')
+                # print('---making new db_row--- ')
                 db_row = Gamedb(
                         dbsessionid=sessionid,
                         boardstate=json.dumps(board),
@@ -161,70 +162,115 @@ def play():
                         human=json.dumps(human)
                     )
                 db.session.add(db_row)
+
             ####    SAVE INIT BOARD TO DB
+            print(f'---board to be saved= {board}')
             db_row.saveboard(sessionid, board, player, human)
-            print(f'---new db_row saved= {db_row}')
+            # print(f'---new db_row saved= {db_row}')
 
-
-            #  if human is black send blacks valid moves
+            ####  IF HUMAN IS BLACK RETURN VALID MOVES
             if human == BLACK:
-                print(f'---HUMAN IS BLACK SO GET AVAIL BOARD:',{human})
-                
-                board = game.boardforresponse(board, human)
-                print(f'---response board board={board}')
-                player = BLACK
-           
+                # print(f'---HUMAN IS BLACK SO GET AVAIL BOARD:',{human})
+                board = game.boardwithavails(board, human)
+                # print(f'---response board board={board}')
+                player = BLACK # DELET THIS?
         
-            # if human == None: # just for print!!!
-            #     print('---sending init board')
-            #     player = None
-            # else :
-                #  return the initialised board
-                # print(f'---returning board full= {board}--')
-            # print(f'---player={player}')
+            if human != WHITE:
+            #### IF HUMAN IS NULL JUST SEND INITIAL BOARD
+                responsevars = {'newgame': True, 'player': player, 'board': board}
+                print(f'---First responsevars= {responsevars}')
+                return jsonify({'newgame': True,'board': board, 'player': player})
 
-            return jsonify({'newgame': True,'board': board, 'player': player})
+        #    NOT A NEW GAME
 
-        #   IF NOT A NEW GAME
+        print('||| AFTER NEWGAME CONDITION')
+        #### GET BOARD FROM DB
+        board = db_row.getboard(sessionid)
+        print(f"board retrieved1 = {board}")
+    
+        humanmove = request.json.get('humanmove')
+        
+        if humanmove: # ONLY SENT ONCE AFTER MOVE TO GET UPADTED BOARD
+            print(f'---IN "IF HUMANMOVE"---')
+            #### MEANS WE ONLY WANT BOARD WITH FLIPS
+            humanmovetuple = tuple(int(char) for char in humanmove)
+
+            ####    UPDATE BOARD WITH HUMAN MOVE
+            board = game.move(board, humanmovetuple,  player)
+            
+            print(f"--- board with human move flips = {board} ")
+            #### NOW JUST SEND THE BOARD - GOTO RESPONSE
+            player = ai
         
         else :
-            print('||| NOT NEW GAME')
-            print(f'---player = {player}')
-            #### GET BOARD FROM DB
-            board = db_row.getboard(sessionid)
-            print(f"board retrieved = {board}")
-            ####     HUMAN MOVE
-        
-            humanmove = request.json.get('humanmove')
-            # print(f"--- humanMove received: {humanmove}{type(humanmove)}---")
-            humanmovetuple = tuple(int(char) for char in humanmove)
-            # print(f"--- movetuple= {humanmovetuple} ")
+            ####             AI MOVE
 
-            # update board with human move
-            newboard, player = game.move(board, humanmovetuple,  player)
-            print(f'---player after move= {player}')
-            board = newboard
-            print(f"--- board with human move flips = {board} ")
-            # aimove = False
-            # # if player == AI
-            # if request.json.get('player') == "AI":
-            #     player = ai
-            #     aimovecalc = ai.getmove(board)
-            #     board = move( board, aimove, player )
-            #     # update board with ai move
-            #     aimove = True
-            # db_row.saveboard(sessionid, board, player, human)
-            #     # if not  win
-            # if not game.gameover(board, player):
-            #      # add valid moves
-            #     board = game.boardforresponse(board, human)
-            # else:
-            #     print('---GAME OVER---')
-            #     winner = game.calc_winner(board)
-            winner = None
-            # return json with board
-            return jsonify({'gameover': winner, 'player': player, 'board': board})
+            print(f'----GET AI MOVE. NO HUMANMOVE...HUMANMOVE WAS SAVED IN LAST REQUEST---')
+
+            ####  CHECK FOR MOVES AVAILABLE FOR AI
+            if  game.available_actions(board, player):
+                print(f'---AI MOVES AVAILABLE---')
+                print(f'---ai avail actions= {game.available_actions(board, player)}')  
+                inputmove = input('enter ai move: ')
+                aimove = tuple(int(char) for char in inputmove)
+
+                #### MAKE AI MOVE
+                game.move( board, aimove, player )
+
+                ####  SAVE BOARD    
+                print(f'---board + ai move TO SAVE={board}---')
+                db_row.saveboard(sessionid, board, player, human)
+
+            else:
+                print(f'---NO VALID MOVES FOR AI---')
+                player = human
+                board = game.boardwithavails(board, human)
+                # CHECK HUMAN HAS MOVES
+                print(f'---avail moves={game.available_actions(board, player)}')  
+                #### IF NOT GAME OVER  
+                if not game.available_actions(board, player):
+                    winner = game.calc_winner(board)
+                ### NO AI MOVES SO GET HUMAN VALID MOVES
+                    print(f'---response  board={board}')
+                    return jsonify({'gameover':winner, 'player': player, 'board': board})
+            # print(f'---board after ai move {board}---')
+            #### NOW ITS HUMANS TURN: SWITCH PLAYER
+            player = human
+
+            ####    CHECK IF GAME OVER
+            
+            if game.gameover(board):
+                print('---GAME OVER---')
+                winner = game.calc_winner(board) 
+                print(f'---winner= {winner}')
         
+        print(f'---player to be returned= {player}')
+
+        ###   SAVE BOARD
+
+        print(f'---board to be saved= {board}')
+        db_row.saveboard(sessionid, board, player, human)
+
+        if player == human:
+
+            ####   ADD VALID MOVES
+            
+            # Ai HAS MOVED - CHECK IF HUMAN CAN MOVE.
+            print(f'----avail moves={game.available_actions(board, player)}')
+            if not game.available_actions(board, player):
+                print(f'---NO VALID MOVES FOR HUMAN---')
+                # IF NOT, PLAYER = AI
+                player = ai
+            else:
+                print(f'---adding valid moves to board')
+                board = game.boardwithavails(board, human)
+
+        ####  PREPARE RESPONSE
+        responsedict = {'gameover': winner, 'player': player, 'board': board}
+        print(f'---response= {responsedict}')
+        # return json with board
+        return jsonify({'gameover': winner, 'player': player, 'board': board})
+    
  
 
 if __name__ == '__main__':

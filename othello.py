@@ -8,7 +8,7 @@ WHITE = 'WHITE'
 
 class Othello():
 
-    def __init__(self, size=4):
+    def __init__(self, size=3):
         """
         Initialize game board.
         Each game board has
@@ -16,20 +16,9 @@ class Othello():
         """
         # (print('\n+++init'))
         self.size = size
-        # self.turnsplayed = 0
-        self.player = 'human'
-        self.enemy = WHITE
-        # print(f'player={self.player}')
-        self.human = BLACK
-        # print(f'human={human}')
-        self.winner = None
-        
-        # print(f'----end of init')
-        # self.availactions = self.available_actions()
-
 
 # BOARD SHOWING AVAILABLE MOVES
-    def boardforresponse(self, board,  player):  
+    def boardwithavails(self, board,  player):  
         print('# ++++boardforresponse')
     
         # print(f'player={player}')
@@ -67,7 +56,7 @@ class Othello():
         board[center+1][center+1] = WHITE
         return board
 
-    def move(self, board, action, player, availactions=None):
+    def move(self, board, action, player):
         """
         Make the move `action` for the current player.
         `action` must be a tuple `(i,j)`.
@@ -77,55 +66,39 @@ class Othello():
         print(f'board={board}')
         print(f'action={action}')
         print(f'player={player}')
-
-        if availactions is None:
-            availactions = self.available_actions(board, player)
-        print(f'availactions={availactions}')
+        if board is None:
+            print("Board is None")
+        availactions = self.available_actions(board, player)
+        # print(f'availactions={availactions}')
      
         # print(f'player={self.player}')
 
-        ####       Check for errors
-        if self.winner is not None:
-            print(f'---self.winner={self.winner}')
-            raise Exception("Game already won")
 
         #####      IS ACTION VALID
-        # try:
-        #     availactions.get(action)
-        # except ValueError:
-        #     print(f"\n>>>>Error:  not in available_actions, or availactions is problematic")
+         # Check if the action is valid
+        if action not in availactions:
+            print("\n>>>>Error: Action not in available_actions.")
+            return board  # Or handle the error differently
 
         ####     GET BITS TO FLIP
-        # print(f'action={action}'    )
-        # print(f'availactions={availactions}')
-        try:
-            bitstoflip = availactions.get(action)
-        except AttributeError:
-            print("ERROR! action not in available_actions. ")
-        print(f'bitstoflip={bitstoflip}')
+      
+        bitstoflip = availactions[action]
+    
 
         ####  MARK BOARD WITH FLIPPED PIECES
         if bitstoflip:
             for bit in bitstoflip:
                 board[bit[0]][bit[1]] = player
-        print(f'board with just  flips')
+        # print(f'board with just  flips')
         
           #####     MARK BOARD WITH ACTUAL MOVE
         board[action[0]][action[1]] = player
-        print(f'board with flips and move= {board}')
+        # print(f'board with flips and move= {board}')
 
-        ####       CHECK IF GAME OVER
-        if self.gameover(board):
-            self.winner = self.calc_winner(board)
-            print(f'GAME OVER! winner={self.winner}')
-            return 
       
-        ####       Update turnsplayed   
-        newplayer = self.switchplayer(board, player)
-        player = newplayer
-        print(f'newplayer now move is done={newplayer}')
+        print('END OF MOVE()')
 
-        return board, player
+        return board
 
     def direction_checker(self, cell, direction, player, board):
 
@@ -205,7 +178,7 @@ class Othello():
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
         """
-        # print('+++availale_actions()')
+        print(f'+++availale_actions()board={board}')
         
         actions = {}
         ####       CREATE THE DIRECTIONS
@@ -248,7 +221,7 @@ class Othello():
                 else:
                     continue
                     # print(f'alldirs_captured=false') 
-        # print(f'actions={actions}')
+        print(f'>>>>>actions={actions}')
         self.availactions = actions
         return actions
    
@@ -286,10 +259,12 @@ class Othello():
         Returns True if game is over, False otherwise.
         """
         # print(f'+++gameover()')
-        if self.winner is not None:
-            return True
+        # if self.winner is not None:
+        #     print(f'+++gameover: self.winner={self.winner}')
+        #     return True
         ####    CHECK IF BOARD IS FULL
-        if not any(cell == EMPTY for row in board for cell in row):
+        if not any(cell == '     ' for row in board for cell in row):
+            print(f'+++gameover: board is full')
             return True
 
         ####   CHECK IF NEITHER PLAYER HAS ANY VALID MOVES

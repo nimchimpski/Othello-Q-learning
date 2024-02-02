@@ -1,3 +1,35 @@
-write overview notes. 
-basic flow of data
-whiteboard? 
+
+
+
+
+
+
+
+
+
+SERVER RECIEVES:
+
+GAME IS NEW:
+REQUEST INITIALBOARD
+humanmove: none
+player:  none
+
+HUMAN CHOSE BLACK:
+REQUEST AVAILABLE MOVES
+humanmove: none
+player: human
+
+HUMAN CHOSE WHITE:
+REQUEST UPDATEBOARD/AI MOVE/AVAILABLE MOVES
+humanmove: none
+player: ai
+
+HUMAN HAS MOVED.
+REQUEST JUST UPDATED BOARD WITH CAPTURES
+# 1
+humanmove: true
+player: human
+# 2 now request the ai move
+humanmove: false
+player: ai
+

@@ -35,9 +35,9 @@
     <!-- loop to build the board from size  -->
     <div id="board"> 
     <table>
-        {% for row in range(4) %}
+        {% for row in range(size) %}
         <tr>
-            {% for col in range(4) %}
+            {% for col in range(size) %}
             <td>
             <div class='cell'>
             <div id="{{row}}{{col}}" class=""></div>

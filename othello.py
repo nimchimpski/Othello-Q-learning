@@ -9,7 +9,7 @@ VALID = '*'
 
 class Othello():
 
-    def __init__(self, size=3):
+    def __init__(self, size=4):
         """
         Initialize game board.
         Each game board has

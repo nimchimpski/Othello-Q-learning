@@ -5,6 +5,7 @@ import time
 EMPTY = '     '
 BLACK = 'BLACK'
 WHITE = 'WHITE'
+VALID = '*'
 
 class Othello():
 
@@ -191,13 +192,14 @@ class Othello():
             # print(f' x= {x}')
             for j, content in enumerate(row):
                 cell = (i,j)
+                print(f'content={content}')
 
                 # print(f'\n >>>CHECKING THIS = {cell}')
-                if content != EMPTY:
+                if (content == BLACK) or (content == WHITE) :
+                    print(f'content is not EMPTY nor *, so continue')
                     continue
                 
-                # cell = (int(cell[0]), int(cell[1]))
-                # print(f'cell={cell}, type={type(cell[0])}')
+                print(f'cell={cell}, type={type(cell[0])}')
                 alldirscaptured = set()
                 ####       FOR EACH DIRECTION
                 for direction in directions:

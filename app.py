@@ -103,6 +103,8 @@ def index():
     # render page with size of board variable
     return render_template('index.html', size=size)
 
+
+
 @app.route('/play', methods=['POST', 'GET'])
 def play():
     print('>>>PLAY ROUTE GET')
@@ -111,6 +113,7 @@ def play():
     BLACK = 'BLACK'
     WHITE = 'WHITE'
     winner = None
+    print(f'winner= {winner}')
 
     ####      GET SESSION ID
     sessionid = session.get('sessionid')
@@ -135,8 +138,8 @@ def play():
 
         ####    GET VARIABLES FROM JSON
         player = request.json.get('player')
-        # print(f'---player set from json = {player}---')
         human = request.json.get('human')
+        humanmove = request.json.get('humanmove')
         if human == 'BLACK':
             ai = 'WHITE'
         else:
@@ -222,17 +225,17 @@ def play():
                 db_row.saveboard(sessionid, board, player, human)
 
             else:
-                print(f'---NO VALID MOVES FOR AI---')
+                print(f'---NO VALID MOVES FOR AI, SO CHECK HUMAN---')
                 player = human
                 board = game.boardwithavails(board, human)
-                # CHECK HUMAN HAS MOVES
-                print(f'---avail moves={game.available_actions(board, player)}')  
-                #### IF NOT GAME OVER  
-                if not game.available_actions(board, player):
+                # CHECK HUMAN HAS MOVES - IF NOT GAME OVER 
+                humanavails = game.available_actions(board, player)
+                print(f'---avail moves hum={humanavails}')  
+                if not   game.available_actions(board, player):
+                    print(f'no human avails?={humanavails}. GAMEOVER')
                     winner = game.calc_winner(board)
-                ### NO AI MOVES SO GET HUMAN VALID MOVES
-                    print(f'---response  board={board}')
-                    return jsonify({'gameover':winner, 'player': player, 'board': board})
+                print(f'---response vars no ai moves: gameover={winner},player={player}, board={board}')
+                return jsonify({'gameover':winner, 'player': player, 'board': board})
             # print(f'---board after ai move {board}---')
             #### NOW ITS HUMANS TURN: SWITCH PLAYER
             player = human
@@ -254,7 +257,7 @@ def play():
         if player == human:
 
             ####   ADD VALID MOVES
-            
+
             # Ai HAS MOVED - CHECK IF HUMAN CAN MOVE.
             print(f'----avail moves={game.available_actions(board, player)}')
             if not game.available_actions(board, player):
@@ -267,7 +270,7 @@ def play():
 
         ####  PREPARE RESPONSE
         responsedict = {'gameover': winner, 'player': player, 'board': board}
-        print(f'---response= {responsedict}')
+        print(f'---response normal  {responsedict}')
         # return json with board
         return jsonify({'gameover': winner, 'player': player, 'board': board})
     

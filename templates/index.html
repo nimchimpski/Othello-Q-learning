@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- css location -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'sharedstatic1.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'othello.css')}}">
 </head>
 
 <body >
@@ -15,20 +16,18 @@
     <!-- BOARD -->
     <header id="messages">
        
-        <div id="message1box">
+        <div id="message1box" >
             <div id="message1"> Choose your player&nbsp;&nbsp;  
         </div>        
 
-        <div id="chooseplayer">
-                <button id="BLACK" class="" onclick="game.startGame(this.id)">
-                <div class="disk blackdisk"></div>
+        <div id="chooseplayer" class=" othello_choose ">
+                <button id="black" class="disk blackdisk" onclick="game.startGame(this.id.toUpperCase())">
                 </button>
-                <button id="WHITE" class="" onclick="game.startGame(this.id)" >
-                    <div class="disk whitedisk"></div>
+                <button  id="white" class="disk whitedisk" onclick="game.startGame(this.id.toUpperCase())" >
                 </button>
             </div>
         </div>
-        <p id="message2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Black plays first</p>
+        <button id="message2" onclick="game.sendrequest(true, null, null, null)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Black plays first</button>
     </header>
     <div id="container">
         
@@ -40,7 +39,7 @@
             {% for col in range(size) %}
             <td>
             <div class='cell'>
-            <div id="{{row}}{{col}}" class=""></div>
+            <button id="{{row}}{{col}}" class=""></button>
             </div>
         </td>
             {% endfor %}
@@ -49,21 +48,23 @@
     </table>
 </div>
 
-    </div>
-    <div id="tbcont_othello" class = "textboxcontainer">
-    <section id = notes class="textbox">
-        <p>blah</p>
-        <br><br><br>
-    
-        <p>How does it work?<br><br>
-        blah blah blah</p>
+    <button id="othello_quit" class="mybutton" onclick="game.sendrequest(true, null,null,null)"> QUIT</button>
 
-        
-        
+
+
+<div id="tbcont_othello" class = "outercontainer">
+    <section class="innercontainer">
     
-        </p>
-    </section>
-</div>
+    <p>HOW TO PLAY</p>
+    <p> Grey disks show valid moves. Aim to capture  pieces between yours, in any direction, so they become your colour. The winner is the one with the most pieces at the end.</p>
+    
+<div></div>
+
+    
+</section>
+    </div>
+   
+
 
    
     <script src="{{ url_for('static', filename='othelloscript.js') }}"></script>

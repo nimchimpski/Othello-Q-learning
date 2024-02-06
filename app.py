@@ -214,6 +214,12 @@ def play():
             if  game.available_actions(board, player):
                 print(f'---AI MOVES AVAILABLE---')
                 print(f'---ai avail actions= {game.available_actions(board, player)}')  
+
+                '''
+                AI MOVE
+
+                aimove = AI.choose_action(board, player, epsilon=False)
+                '''
                 inputmove = input('enter ai move: ')
                 aimove = tuple(int(char) for char in inputmove)
 

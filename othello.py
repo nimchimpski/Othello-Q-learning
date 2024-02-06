@@ -17,6 +17,7 @@ class Othello():
         """
         # (print('\n+++init'))
         self.size = size
+        self.board = self.create_board()
 
 # BOARD SHOWING AVAILABLE MOVES
     def boardwithavails(self, board,  player):  
@@ -277,7 +278,7 @@ class Othello():
         
 
 
-class NimAI():
+class OthelloAI():
 
     def __init__(self, alpha=0.5, epsilon=0.1):
         """
@@ -366,7 +367,7 @@ class NimAI():
         =epsilon is the exploration rate (probability of taking a random action))]
         ='Q-table' is a dictionary mapping state-action pairs to Q-values
         """
-        actions =  Nim.available_actions(state)
+        actions =  game.available_actions(state, player)
         # print(f"+++best_future: actions={actions} len={len(actions)})") 
         if not actions:
             # print(f"---no actions")
@@ -391,7 +392,7 @@ class NimAI():
 
         # get max of the q values
 
-    def choose_action(self, state, epsilon=True):
+    def choose_action(self, state, player, epsilon=True):
         """
         Given a state `state`, return an action `(i, j)` to take.
 
@@ -406,7 +407,7 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        actions = Nim.available_actions(state)
+        actions = game.available_actions(state, player)
         # print(f"---actions = {actions}")
         if len(actions) == 1:
             return list(actions)[0]
@@ -436,26 +437,19 @@ class NimAI():
         # print(f">>>chooseaction={bestaction}")
         return bestaction
 
-    # def printq(self,x):
-    #     for key,val in self.q.items():
-    #         # print(f"///{key[0][1]}")
-    #         if key[0] == x:  # enter state you want to inspect
-
-    #             print(f"result = {key,':',val}")
-    #             print(f"result = {key} : {val}")
 
 def train(n):
     """
     Train an AI by playing `n` games against itself.
     """
 
-    player = NimAI()
+    player = OthelloAI()
     # player0wins = 0
 
     # Play n games
     for i in range(n):
         print(f"Playing training game {i + 1}")
-        game = Nim()
+        game = Othello()
         # print(f"---q dict={player.q}")
 
         # Keep track of last move made by either player
@@ -469,9 +463,9 @@ def train(n):
             # print(f"\n---player = {game.player}")
 
             # Keep track of current state and action
-            state = game.piles.copy()
+            state = game.board.copy()
             # print(f"---state={state}")
-            action = player.choose_action(game.piles)
+            action = player.choose_action(game.available_actions(player, state))
             # print(f"---action={action}")
 
             # Keep track of last state and action
@@ -528,69 +522,5 @@ def train(n):
     return player
 
 
-# def playterminal(player0=0, player1=1):
-#     """
-#     Play game between 2 humans or human game against the AI.
-#     `player0 = AI, human_player` can be set to 0 or 1 to specify whether
-#     human player moves first or second.
-#     """
-#     # Create new game
-#     game = Othello()
-
-#     # If no player order set, choose human's order randomly
-#     if game.human is None:
-#         game.human = random.randint(0, 1)
-
-
-
-#     # Game loop
-#     while True:
-
-#         # Print board
-#         # game.printboard()
-#         print('. is empty')
-#         print('* is available move')
-#         print(f'00 is top left, 0{game.size-1} is top right')
-#         if game.turnsplayed == 0:
-#             print(f'X plays first')
-#         print()
-#         ####     CHECK FOR GAME OVER
-
-#         if game.gameover(board, player):
-#             game.calc_winner(board)
-#             print(f'GAME OVER! winner={game.winner}')
-#             playagain = input("Play again? (y/n): ")
-#             if playagain == 'y':
-#                 game = Othello()
-#                 continue
-#             else:
-#                 return
-
-#             # CHECK IF AVAILABLE ACTIONS FOR BLACK
-#         if not game.available_actions(board, BLACK):
-#                 print(f"no available moves for {game.player}")
-#                 print(f"{game.enemy} to play")
-#                 game.turnsplayed += 1
-#                 game.update_player()
-                
-#         inputmove = input(f"enter a move for {game.player}...")
-#         # print(f'TERM inputmove={inputmove}')
-
-#         ####      CHECK FOR VALID INPUT
-#         if len(inputmove) != 2 and not inputmove.isdigit() :
-#             print(f"\nInvalid move, try again.")
-#             continue
-#         else:
-#             inputmove = tuple(int(i) for i in inputmove)
-
-#         ####      CHECK FOR VALID MOVE
-#         availactions = game.available_actions()   
-#         # print(f'TERM availactions={availactions}') 
-#         if inputmove not in availactions:
-#             print(f"\nInvalid move, try again.")
-#             continue
-#         else:
-#             game.move(inputmove, availactions)
-        
 if __name__ == "__main__":
         app.run(debug=True)

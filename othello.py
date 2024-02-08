@@ -1,6 +1,7 @@
 import math
 import random
 import time
+import pickle
 from copy import deepcopy
 
 EMPTY = 0
@@ -10,7 +11,7 @@ VALID = '*'
 
 class Othello():
 
-    def __init__(self, size=4):
+    def __init__(self, size=6):
         """
         Initialize game board.
         Each game board has
@@ -292,16 +293,6 @@ class Othello():
         # print(f'----end of gameover()')
         return False
         
-    def evaluateboard(self,captures):
-        """
-        Returns a number representing the value of the current game state to the player.
-        """
-        # print(f'+++evaluateboard()')
-        if captures == 0:
-            return 0
-
-        result = 1 - 1 / (captures + 1)
-        return result
        
 
 class OthelloAI():
@@ -374,6 +365,8 @@ class OthelloAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
+        # print(f"+++UPDATEQ FOR PLAYER {player}")
+        # print(f"---state={state}, action={action}, old_q={old_q}, reward={reward}, future_rewards={future_rewards}")
         if state is None or action is None:
             print(f"---!!!!!state or action is None")
             return
@@ -384,9 +377,12 @@ class OthelloAI():
         statetuple = self.statetotuple(state)
      
         newvalest = reward + future_rewards
- 
+        # print(f"---newvalest={newvalest}")
+        ####     IF WINNER = PLAYER, REWARD = 1
+
         result = old_q + (self.alpha * (newvalest - old_q))
         result = round(result, 2)
+        # print(f"---result={result}")
         self.q[player, statetuple, action] = result
         # print(f"---updateq self.q = {self.q[statetuple, action]}")
         
@@ -420,8 +416,8 @@ class OthelloAI():
         # print(f"---qlist={qlist} len={len(qlist)}")
         best = max(qlist)
         # print(f"---best={best}")
-        # gamma = (1 - self.epsilon)
-        gamma = 1
+        ####   GAMMA=1 MEANS FUTURE REWARDS ARE PRIORITIZED
+        gamma = 1 
         result =  gamma * best
         # print(f"---result={result}")
         # print(f">>>best={best}")
@@ -431,7 +427,7 @@ class OthelloAI():
 
         # get max of the q values
 
-    def choose_q_action(self, state, player, game_instance, epsilon=False):
+    def choose_q_action(self, state, player, game_instance, epsilon=True):
         """
         Given a state `state`, return an action `(i, j)` to take.
 
@@ -462,55 +458,90 @@ class OthelloAI():
 
         actions = game_instance.available_actions(state, player)
         # print(f"---actions={actions}")
+        if not actions:
+            return None
+        action = None
         ####  IF ONLY ONE ACTION RETURN IT
-        # if len(actions) == 1:
-        #     return list(actions)[0]
+        if len(actions) == 1:
+            # print(f"---only one action, so returning it")
+            key = next(iter(actions))
+            action = key
+            # print(f'---action 1  = {action}')
 
-        ####  
-
+        
         # WITH EPSILON TRUE: CHOOSE RANDOM ACTION WITH EPSILON PROB
-        if epsilon == True:
-            # print(f"---epsilon = {epsilon}")
+        elif epsilon == True:
+            # print(f"---CHOOSING EPSILON HERE = {epsilon}")
             x = random.random()
-            print(f"---random x = {x}")
+            # print(f"---random x = {x}")
             if x < self.epsilon:
+                # print(f"---x < epsilon, so chooseing random action")
                 action = random.choice(list(actions))
                 # print(f">>>EPs=True : random action= {action}")
-                return action
+            # else:
+                # print(f'---a random action was not chosen, so use the q table to choose the best action')
+        ### EPSILON FALSE: CHOOSE ACTION WITH HIGHEST Q VALUE
+        ####     ALSO RETURN CAPTURES, SO CAN BE USED AS HEURISTIC
+        # print(f'---action 2  = {action}')
+        if not action:
+            maxq = -float('inf')
+            bestaction_q = None
+            bestactions = []
+            # print(f'---CHOOING Q ACTION HERE:')
+            # print(f'---actions={actions}')
 
-        ####     IF NO Q VALUES, CHOOSE ACTION WITH MOST CAPTURES/BITSTOFLIP
-        # calculate longest tuple in actions
-        # print(f"---actions={actions}")
-   
+            for action in actions:
+                assert action is not None
+                # print(f"---action={action}")
+                q = self.get_q_value(player, state, action)
+                # print(f"---q={q}")
 
-        ####    CHOOSE  ACTION WITH BEST Q VALUE
-        maxq = 0
-        bestaction_q = None
-        # print(f'---CHOOING Q ACTION HERE:')
-        for action in actions:
-            q = self.get_q_value(player, state, action)
-            if q is None:
-                q = 0
-            # print(f"---q={q}")
-            if q >= maxq:
-                maxq = q
-                bestaction_q = action
-            # print(f"---bestcaction={bestaction_q}")
-        # bestaction could be none
+                ###    UNSEARCHED STATES/ACTIONS GET AWARDED 0 TODO: ???
+                if q is None:
+                    q = 0
+                # print(f"---q={q}")
+                if q > maxq:
+                    #### TODO THIS COULD PICK AN ACTION WITH EQUAL Q USING A PROBABILITY, OTHERWISE IT WILL ALWAYS PICK THE LAST ACTION WITH THE HIGHEST Q
+                    maxq = q
+                    bestactions = [action]
+                elif q == maxq:
+                    bestactions.append(action)
+            # print(f"---bestactions= {bestactions}")
+            bestaction_q = random.choice(bestactions)
+            # print(f"---bestcaction_q= {bestaction_q}")
+            action = bestaction_q
+        # print(f"---action 3  = {action}")
+      
         # get the captured pieces
-        captured = actions[bestaction_q]
-        # print(f"---captured={captured}")
+        captured = actions[action]
+        # print(f"---returning={action}, {captured}")
         # print(f'+--end of choose_q_action()')
-        return bestaction_q, captured
+        return action, captured
     
-    def save_model(self, filename):
+    def evaluateboard(self,captures):
         """
-        Save the Q-learning model to a file.
+        Returns a number representing the value of the current game state to the player.
         """
-        with open(filename, "w") as file:
-            for key, value in self.q.items():
-                file.write(f"{key[0]} {key[1]} {key[2]} {value}\n")
-                
+        # print(f'+++evaluateboard()')
+        if captures == 0:
+            return 0
+
+        result = 1 - 1 / (captures + 1)
+        # print(f'---result={result}')
+        result = result * .5
+        # print(f'---result={result}')
+        # print(f'---captures based evaluation={result}')
+        return result
+    
+    def save_data(self, filename):
+        with open('qtable.pickle', 'wb') as f:
+            # print(f"+++saving qtable: {self.q}")
+            pickle.dump(self.q, f)
+
+    def load_data(self, filename ):
+        with open('qtable.pickle', 'rb') as f:
+            q = pickle.load(f)
+            return q
 
 def train(n):
     """
@@ -518,6 +549,9 @@ def train(n):
     """
 
     ai = OthelloAI()
+    #### LOAD EXISTING Q TABLE
+    ai.q = ai.load_data('qtable')
+    
     # ai0wins = 0
     completed = 0
     ####      PLAY N GAMES
@@ -538,6 +572,7 @@ def train(n):
         while True:
             # print(f"\n^^^player = {game.player}")
             opponent = game.switchplayer(game.player)
+            # print(f"^^^opponent = {opponent}")
 
             ####      KEEP TRACK OF CURRENT STATE AND ACTION
             new_state = deepcopy(game.state)
@@ -548,34 +583,44 @@ def train(n):
 
             ####      CHOOSE ACTION FROM Q TABLE
             actions = ai.choose_q_action(new_state, game.player, game)
+            if  actions is None:
+                # print(f"---no actions")
+                game.player = game.switchplayer(game.player)
+                continue
+
             action = actions[0]
-            # print(f"^^^ q action just chosen ={action}")
+            # print(f"^^^ q action just chosen ={actions[0]} ")
             
-            ####      KEEP TRACK OF LAST STATE AND ACTION
-            last[game.player]["state"] = new_state
+            ####      KEEP TRACK OF LAST STATE (BEFORE MOVE) AND ACTION
+            last[game.player]["state"] = game.state
             last[game.player]["action"] = action
 
             ####      MAKE MOVE
             new_state = game.move(new_state, action, game.player)
-            # print(f"/^^^AFTER MOVE:")
+            # print(f"/^^^AFTER MOVEfor player {game.player}")
             # game.printboard(new_state)
 
-            ####     EVALUATE NEW STATE
+            ####     EVALUATE NEW STATE - IF GAME NOT OVER
             # number of captures?
-            captures = len(actions[1])
-            # print(f"^^^captures={captures}")
-            evaluation = game.evaluateboard(captures)
-            # print(f"^^^evaluation={evaluation}")
+            if not game.gameover(new_state):
+                captures = len(actions[1])
+                # print(f"^^^captures={captures}")
+                evaluation = ai.evaluateboard(captures)
+                # print(f"^^^evaluation={evaluation}")
 
-            ####     UPADTE Q VALUES
-            ai.update(game.state, action, new_state, evaluation, game)
+                ####     UPADTE Q VALUES
+                ai.update(game.state, action, new_state, evaluation, game)
 
             ####      WHEN GAME IS OVER, UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
-                # print(f"^^^gameover={game.gameover(new_state)}")
                 game.winner = game.calc_winner(new_state)
-                # print(f"^^^game.calc_winner= {game.calc_winner(new_state)}")
-                # print(f"^^^game.winner= {game.winner}")
+                # game.printboard(new_state)
+                # print(f"---game.winner= {game.winner}")
+                # print(f'---game.player= {game.player}')
+                # print(f"---last[game.player]['state']={last[game.player]['state']}")
+                # print(f"---last[game.player]['action']={last[game.player]['action']}")
+                # print(f'---last[game.opponent]["state"]={last[opponent]["state"]}')
+                # print(f'---last[game.opponent]["action"]={last[opponent]["action"]}')
                 ####     PLAYER WON
                 if game.player == game.winner:
                     # print(f"^^^last[game.player]={last[game.player]}")
@@ -652,11 +697,11 @@ def train(n):
             # print(f"^^^player after switching={game.player}\n")
 
         completed += 1
-        if completed % 1000 == 0:
+        if completed % 100 == 0:
             print(f"played games = {completed}")
         # print(f"^^^q table at end of game = {ai.q}")
     print(f"Done training {completed} games")
-    print(f"^^^q table = {ai.q}")
+    # print(f"^^^q table = {ai.q}")
     ####      RETURN THE TRAINED AI
     return ai
 

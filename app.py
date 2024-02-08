@@ -8,6 +8,7 @@ import time
 import json
 import uuid
 import os
+import pickle
 
 import othello as othello
 
@@ -15,6 +16,9 @@ app = Flask(__name__, static_folder='../sharedstatic')
 app.secret_key = "supermofustrongpword"
 
 aiplayer = othello.OthelloAI()
+aiplayer.q = aiplayer.load_data('qtable')
+# print(f'---loaded q table = {aiplayer.q}')
+
 
 ####      CONFIGURE PROXYFIX WITH THE CORRECT PARAMETERS
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
@@ -286,8 +290,8 @@ def play():
             else:
                 print(f'---adding valid moves to board')
                 board = game.boardwithavails(board, human)
-        if winner:
-            print(f'---q table = {aiplayer.q}')
+        # if winner:
+            # print(f'---q table = {aiplayer.q}')
         ####  PREPARE RESPONSE
         responsedict = {'gameover': winner, 'player': player, 'board': board}
         print(f'---response normal  {responsedict}')

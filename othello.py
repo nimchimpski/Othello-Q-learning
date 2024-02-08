@@ -24,20 +24,20 @@ class Othello():
 
     # BOARD SHOWING AVAILABLE MOVES
     def boardwithavails(self, board,  player):  
-        print('# ++++boardforresponse')
+        print(' ++++boardwithavails')
     
         # print(f'player={player}')
         for cell in self.available_actions( board, player):
-            # print(f'cell={cell}')
+            print(f'cell={cell}')
             board[cell[0]][cell[1]] = '*'
-        print(f"response() board=")
+        # print(f"for response board= {board}")
         self.printboard(board)
         return board
        
     def switchplayer(self, player):
         # print(f'+++switchplayer()')
         # print(f'player={player}')
-        assert player in [BLACK, WHITE]
+        # print(f'switchplayer player={player}')
         if player == BLACK:
             # if self.available_actions(board, player):
             return WHITE
@@ -83,7 +83,7 @@ class Othello():
 
         #####      IS ACTION VALID
          # Check if the action is valid
-        assert action in availactions, f"Action {action} not in available actions {availactions}"
+        # assert action in availactions, f"Action {action} not in available actions {availactions}"
         if action not in availactions:
             print("\n>>>>Error: Action not in available_actions.")
             return board  # Or handle the error differently
@@ -158,7 +158,9 @@ class Othello():
             # print(f'first nextcell calc={nextcell}')
 
             ### CALCULATE opponent
+            # print(f'player={player}')
             opponent = self.switchplayer(player)
+            # print(f'opponent={opponent}')
 
             ####       IF NEXTCELL IS NOT opponent, ABORT?
             if not board[nextcell[0]][nextcell[1]] == opponent:
@@ -248,20 +250,22 @@ class Othello():
         white_score = 0
         for row in board:
             for cell in row:
-                if cell == BLACK:
+                if cell == 1:
                     black_score += 1
-                elif cell == WHITE:
+                elif cell == -1:
                     white_score += 1
         # print(f'black_score={black_score}')
         # print(f'white_score={white_score}')
         return (black_score, white_score)
 
     def calc_winner(self, board):
-        black, white = self.scores(board)
-        if black > white:
+        black_score, white_score = self.scores(board)
+        # print(f'+++calc_winner()')
+        # print(f'black_score, white_score={black_score}{white_score})')
+        if black_score > white_score:
             self.winner = BLACK
             return BLACK
-        elif white > black:
+        elif white_score > black_score:
             self.winner = WHITE
             return WHITE
         else:
@@ -277,11 +281,13 @@ class Othello():
         #     return True
         ####    CHECK IF BOARD IS FULL
         if not any(cell == 0 for row in board for cell in row):
-            # print(f'+++gameover: board is full')
+            # print(f'---board is full')
             return True
 
         ####   CHECK IF NEITHER PLAYER HAS ANY VALID MOVES
         if (not self.available_actions(  board, -1) and not self.available_actions(board, 1)):
+            # print(f'---no valid moves for either player')
+            # print(f'----end of gameover()')
             return True
         # print(f'----end of gameover()')
         return False
@@ -440,8 +446,20 @@ class OthelloAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-       
+
         # print(f"+++choose-Q : actions=")
+        # print(f"---state={state}")
+        ####  convert board to tuple
+        for row in state:
+            for cell in row:
+                if cell == EMPTY:
+                    cell = 0
+                elif cell == BLACK:
+                    cell = 1
+                elif cell == WHITE:
+                    cell = -1
+        # print(f"---state after={state}")
+
         actions = game_instance.available_actions(state, player)
         # print(f"---actions={actions}")
         ####  IF ONLY ONE ACTION RETURN IT
@@ -485,7 +503,14 @@ class OthelloAI():
         # print(f'+--end of choose_q_action()')
         return bestaction_q, captured
     
-
+    def save_model(self, filename):
+        """
+        Save the Q-learning model to a file.
+        """
+        with open(filename, "w") as file:
+            for key, value in self.q.items():
+                file.write(f"{key[0]} {key[1]} {key[2]} {value}\n")
+                
 
 def train(n):
     """
@@ -498,7 +523,7 @@ def train(n):
     ####      PLAY N GAMES
     for i in range(n):
         
-        print(f"Playing training game {i + 1}")
+        # print(f"Playing training game {i + 1}")
         game = Othello()
         # print(f"^^^q dict={ai.q}")
 
@@ -511,20 +536,20 @@ def train(n):
 
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-            print(f"\n^^^player = {game.player}")
+            # print(f"\n^^^player = {game.player}")
             opponent = game.switchplayer(game.player)
 
             ####      KEEP TRACK OF CURRENT STATE AND ACTION
             new_state = deepcopy(game.state)
             # print(f"^^^GAME.STATE=")
             # game.printboard(game.state)
-            print(f"^^^ STATECOPY=")
-            game.printboard(new_state)
+            # print(f"^^^ STATECOPY=")
+            # game.printboard(new_state)
 
             ####      CHOOSE ACTION FROM Q TABLE
             actions = ai.choose_q_action(new_state, game.player, game)
             action = actions[0]
-            print(f"^^^ q action just chosen ={action}")
+            # print(f"^^^ q action just chosen ={action}")
             
             ####      KEEP TRACK OF LAST STATE AND ACTION
             last[game.player]["state"] = new_state
@@ -532,25 +557,25 @@ def train(n):
 
             ####      MAKE MOVE
             new_state = game.move(new_state, action, game.player)
-            print(f"/^^^AFTER MOVE:")
-            game.printboard(new_state)
+            # print(f"/^^^AFTER MOVE:")
+            # game.printboard(new_state)
 
             ####     EVALUATE NEW STATE
             # number of captures?
             captures = len(actions[1])
-            print(f"^^^captures={captures}")
+            # print(f"^^^captures={captures}")
             evaluation = game.evaluateboard(captures)
-            print(f"^^^evaluation={evaluation}")
+            # print(f"^^^evaluation={evaluation}")
 
             ####     UPADTE Q VALUES
             ai.update(game.state, action, new_state, evaluation, game)
 
             ####      WHEN GAME IS OVER, UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
-                print(f"^^^gameover={game.gameover(new_state)}")
+                # print(f"^^^gameover={game.gameover(new_state)}")
                 game.winner = game.calc_winner(new_state)
                 # print(f"^^^game.calc_winner= {game.calc_winner(new_state)}")
-                print(f"^^^game.winner= {game.winner}")
+                # print(f"^^^game.winner= {game.winner}")
                 ####     PLAYER WON
                 if game.player == game.winner:
                     # print(f"^^^last[game.player]={last[game.player]}")
@@ -627,6 +652,8 @@ def train(n):
             # print(f"^^^player after switching={game.player}\n")
 
         completed += 1
+        if completed % 1000 == 0:
+            print(f"played games = {completed}")
         # print(f"^^^q table at end of game = {ai.q}")
     print(f"Done training {completed} games")
     print(f"^^^q table = {ai.q}")

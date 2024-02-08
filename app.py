@@ -14,6 +14,8 @@ import othello as othello
 app = Flask(__name__, static_folder='../sharedstatic')
 app.secret_key = "supermofustrongpword"
 
+aiplayer = othello.OthelloAI()
+
 ####      CONFIGURE PROXYFIX WITH THE CORRECT PARAMETERS
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
@@ -109,14 +111,15 @@ def index():
 def play():
     print('>>>PLAY ROUTE GET')
 
-    EMPTY = '*'
-    BLACK = 'BLACK'
-    WHITE = 'WHITE'
+    EMPTY = 0
+    BLACK = 1
+    WHITE = -1
     winner = None
     print(f'winner= {winner}')
 
     ####      GET SESSION ID
     sessionid = session.get('sessionid')
+    print(f'---sessionid={sessionid}')
 
     ####      CREATE GAME INSTANCE
     game = othello.Othello()
@@ -138,16 +141,21 @@ def play():
 
         ####    GET VARIABLES FROM JSON
         player = request.json.get('player')
+        if player:
+            player = int(player)
         human = request.json.get('human')
+        if human:
+            human = int(human)
         humanmove = request.json.get('humanmove')
-        if human == 'BLACK':
-            ai = 'WHITE'
+        if human == 1:
+            ai = -1
         else:
-            ai = 'BLACK'
+            ai = 1
+        print(f"---human= {human}, ai= {ai}---")
 
         ####     CHECK IF NEW GAME + INITIALISE
         if request.json.get('newgame') == True:
-            assert request.json.get('human') != True
+            assert request.json.get('humanmove') != True
 
             ####   RESET BOARD
             board = game.create_board()
@@ -172,13 +180,15 @@ def play():
             # print(f'---new db_row saved= {db_row}')
 
             ####  IF HUMAN IS BLACK RETURN VALID MOVES
-            if human == BLACK:
-                # print(f'---HUMAN IS BLACK SO GET AVAIL BOARD:',{human})
+            print(f'---human= {human}, type= {type(human)}---')
+            print(f'---human == 1? {human == 1}---')
+            if human == 1:
+                print(f'---HUMAN IS BLACK SO GET AVAIL BOARD:',{human})
                 board = game.boardwithavails(board, human)
                 # print(f'---response board board={board}')
-                player = BLACK # DELET THIS?
+                player = 1 # DELET THIS?
         
-            if human != WHITE:
+            if human != -1:
             #### IF HUMAN IS NULL JUST SEND INITIAL BOARD
                 responsevars = {'newgame': True, 'player': player, 'board': board}
                 print(f'---First responsevars= {responsevars}')
@@ -193,7 +203,7 @@ def play():
     
         humanmove = request.json.get('humanmove')
         
-        if humanmove: # ONLY SENT ONCE AFTER MOVE TO GET UPADTED BOARD
+        if humanmove: # ONLY SENT ONCE AFTER MOVE TO GET UPDATED BOARD
             print(f'---IN "IF HUMANMOVE"---')
             #### MEANS WE ONLY WANT BOARD WITH FLIPS
             humanmovetuple = tuple(int(char) for char in humanmove)
@@ -203,13 +213,13 @@ def play():
             
             print(f"--- board with human move flips = {board} ")
             #### NOW JUST SEND THE BOARD - GOTO RESPONSE
-            player = ai
+            player = game.switchplayer(player)
         
         else :
             ####             AI MOVE
 
             print(f'----GET AI MOVE. NO HUMANMOVE...HUMANMOVE WAS SAVED IN LAST REQUEST---')
-
+            print(f"---player AI? {player}---")
             ####  CHECK FOR MOVES AVAILABLE FOR AI
             if  game.available_actions(board, player):
                 print(f'---AI MOVES AVAILABLE---')
@@ -220,11 +230,14 @@ def play():
 
                 aimove = AI.choose_action(board, player, epsilon=False)
                 '''
-                inputmove = input('enter ai move: ')
-                aimove = tuple(int(char) for char in inputmove)
+                # inputmove = input('enter ai move: ')
+                # aimove = tuple(int(char) for char in inputmove)
+                aimove = aiplayer.choose_q_action(board, player, game, epsilon=False)
+                print(f'---ai move= {aimove}')
+
 
                 #### MAKE AI MOVE
-                game.move( board, aimove, player )
+                game.move( board, aimove[0], player )
 
                 ####  SAVE BOARD    
                 print(f'---board + ai move TO SAVE={board}---')
@@ -273,7 +286,8 @@ def play():
             else:
                 print(f'---adding valid moves to board')
                 board = game.boardwithavails(board, human)
-
+        if winner:
+            print(f'---q table = {aiplayer.q}')
         ####  PREPARE RESPONSE
         responsedict = {'gameover': winner, 'player': player, 'board': board}
         print(f'---response normal  {responsedict}')

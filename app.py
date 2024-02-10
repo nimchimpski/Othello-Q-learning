@@ -11,8 +11,9 @@ import os
 import pickle
 
 import othello as othello
-
-app = Flask(__name__, static_folder='../sharedstatic')
+####  OPTION TO CHANGE STATIC LOCATION!
+# app = Flask(__name__, static_folder='../sharedstatic')
+app = Flask(__name__ )
 app.secret_key = "supermofustrongpword"
 
 aiplayer = othello.OthelloAI()

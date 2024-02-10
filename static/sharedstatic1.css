@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css2?family=Gruppo&display=swap');
+
+    body {
+      
+        background-color: #000000;
+        color: #FFFFFF;
+        font-family: 'Gruppo', sans-serif;
+        caret-color: transparent;
+        padding: 15px;
+        height: 100vh;
+    }
+    H1 {
+        font-size: 2rem;
+        text-align: center
+    }
+    #container {
+        position: relative;
+        padding-top: 0px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        /* border: #051df5 1px solid; */
+  
+    }
+
+    /* MESSAGES */
+
+    #messages {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        
+        margin-bottom: 15px;
+        /* border : #f2f609 1px solid; */
+    }
+  
+    #message1box {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* border: #f50525 1px solid; */
+    }
+    #message2 {
+        margin-top: 1rem;
+        font-size: 1rem;
+        color: white;
+
+    }
+
+    /* CHOOSE PLAYER */
+
+    #chooseplayer {
+        position:relative;
+        
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center; /* Align the buttons vertically */
+        /* border: #35f505 1px solid; */
+        
+    }
+
+    .mybutton {
+        border: 1px dotted rgb(248, 6, 6);
+        color: rgb(255, 255, 255);
+        padding: 5px;
+        
+        
+
+    }
+
+    button {
+        background-color: #000000;
+        /* color: #FFFFFF; */
+        border: None;
+        /* display: inline-flex; */
+        justify-content: center;
+        align-items: center;
+        /* height: 3rem; */
+        /* width: 3rem; */
+        /* border-radius: 5px; */
+        padding-left: 0px;
+        padding-right: 0px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        margin: 2px;
+        font-size: 1rem;
+        font-family: 'Gruppo', sans-serif;
+        top: 2px;
+        
+    }
+   
+
+        /* BOARD AND PIECES */
+
+    #board {
+        position: relative;
+        top:0px;
+        display: block;
+        /* border : #f609cb 1px solid; */
+    }
+
+    table {
+        table-layout: fixed;
+        width: 300px;
+        height: 300px;
+        margin-left: auto;
+        margin-right: auto;
+        border: #fdfcfc 1px solid;
+        border-collapse: collapse;
+        
+    }
+    td {
+     
+        position: relative;
+        /* top: -8px; */
+        width: 90px;
+        height: 90px;
+        border: #fdfcfc 1px solid;
+    
+        /* text-align: center; */
+        /* vertical-align: middle; */
+        /* font-size: 5rem; */
+    }
+    .cell {  
+        position: relative;
+        top: 0px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* border:#eb1010 1px solid; */
+    }
+
+        /* INFO TEXT AT BOTTOM */
+
+    
+    .innercontainer {
+        
+        
+        margin-left: auto;
+        margin-right: auto;
+    
+        /* background-color: #000000;
+        color: #ffffff; */
+        padding: 2px 2px 2px 2px;   
+        /* border: 1px solid rgb(225, 218, 11); */
+    }
+   
+    .outercontainer {
+        position:relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        margin-left: auto;
+        margin-right: auto;
+        padding: 20px 20px 20px 20px;
+        overflow: scroll;
+        border: 1px solid rgb(255, 255, 255);
+        color: rgb(255, 255, 255);
+        max-width: 500px;
+    }
+    .textbox {
+
+        max-width: 500px;
+        border: #FFFFFF 1px solid;
+        padding: 20px 10px 20px 10px;
+    } 
+
+    .test {
+        /* width: 80%;
+        height: 80%; 
+        border-radius: 50%;
+        display: block;
+       */
+        border: 3px solid #ffffff;  
+        background-color: rgb(211, 43, 43);
+    }

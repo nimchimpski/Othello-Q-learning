@@ -4,3 +4,15 @@ __pychahce__/
 venv/
 z/
 __pycache__/calculator.cpython-310.pyc
+test/__pycache__/test_othello.cpython-310-pytest-8.0.0.pyc
+test/__pycache__/test_calculator.cpython-310-pytest-8.0.0.pyc
+test/__pycache__/calculator.cpython-310.pyc
+test/__pycache__/__init__.cpython-310.pyc
+__pycache__/wsgi.cpython-310.pyc
+__pycache__/testothello.cpython-310-pytest-7.4.4.pyc
+__pycache__/test.cpython-310-pytest-7.4.4.pyc
+__pycache__/test_othello.cpython-310-pytest-7.4.4.pyc
+__pycache__/othello.cpython-310.pyc
+__pycache__/nim.cpython-310.pyc
+__pycache__/app.cpython-310.pyc
+.DS_Store

@@ -1,0 +1,52 @@
+#othello_quit {
+    position: relative;
+    top: 0rem;
+    MARGIN: 2rem;
+}
+
+/* Base class for both disks */
+.disk {
+    width: 3rem; /* or any other size */
+    height: 3rem; /* should be the same as width for a perfect circle */
+    border-radius: 50%; /* this makes the shape a circle */
+}
+/* White disk */
+.whitedisk {
+    background-color: white;
+    border: 1px solid #ffffff; /* slight border for better visibility on white backgrounds */
+}
+/* Black disk */
+.blackdisk {
+    background-color: black;
+    border: 1px solid white; /* slight border for better visibility on black backgrounds */
+}
+.validmove {
+    background-color: hsl(0, 0%, 22%);
+}
+
+#white {
+    width: 2rem;
+    height: 2rem;
+}
+
+#black {
+    width: 2rem;
+    height: 2rem;
+}
+
+.othello_choose {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center; 
+    padding-left: 1rem;
+    gap: 20px; 
+    /* border: 1px solid blue; */
+}
+
+/* #tbcont_othello {
+    position: absolute;
+    top: 300px;
+    left: 0;
+    right: 0;
+} */

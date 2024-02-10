@@ -11,6 +11,7 @@ import os
 import pickle
 
 import othello as othello
+# hello me
 ####  OPTION TO CHANGE STATIC LOCATION!
 # app = Flask(__name__, static_folder='../sharedstatic')
 app = Flask(__name__ )

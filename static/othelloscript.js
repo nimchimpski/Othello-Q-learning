@@ -112,10 +112,11 @@ class Othellogame {
             console.log('...requesting ai move. ');
             this.sendrequest(true, null, this.human, this.ai);
             this.message2.innerHTML = "Computer thinking...";
-        }
+            }
         let humancolor = null;
+        console.log('...humancolor 1 =', humancolor);
 
-        if (this.human === '1') {
+        if (this.human === 1) {
             humancolor = "black";
         }
         else {

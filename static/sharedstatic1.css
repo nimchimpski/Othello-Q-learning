@@ -94,14 +94,36 @@
     }
    
 
-        /* BOARD AND PIECES */
-
+    /* BOARD AND PIECES */
     #board {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        /* grid-gap: 5px; */
+        max-width: 700px;
+        width:100%;
+        /* min-width: 700px; */
+        margin: auto;
+        /* padding: 5px; */
+        border:#FFFFFF 1px solid;
+    }
+    
+    .cell {
+        aspect-ratio: 1; /* Ensures cells are square */
+        border: white 1px solid;
+    }
+    
+    .cell button {
+        width: 100%;
+        height: 100%;
+    }
+        
+        
+
+    /* #board {
         position: relative;
         top:0px;
         display: block;
-        /* border : #f609cb 1px solid; */
-    }
+    } */
 
     table {
         table-layout: fixed;
@@ -125,14 +147,13 @@
         /* vertical-align: middle; */
         /* font-size: 5rem; */
     }
-    .cell {  
+    /* .cell {  
         position: relative;
         top: 0px;
         display: flex;
         justify-content: center;
         align-items: center;
-        /* border:#eb1010 1px solid; */
-    }
+    } */
 
         /* INFO TEXT AT BOTTOM */
 

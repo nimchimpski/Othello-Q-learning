@@ -34,21 +34,18 @@
     <div id="container">
         
     <!-- loop to build the board from size  -->
-    <div id="board"> 
-    <table>
+    <!-- <div class = boarcontainer> -->
+        <div id="board"> 
         {% for row in range(size) %}
-        <tr>
             {% for col in range(size) %}
-            <td>
-            <div class='cell'>
-            <button id="{{row}}{{col}}" class=""></button>
-            </div>
-        </td>
+                <div class='cell'>
+                    <button id="{{row}}{{col}}" class=""></button>
+                </div>
             {% endfor %}
-        </tr>
         {% endfor %}
-    </table>
-</div>
+    </div>  
+<!-- </div> -->
+    
 
     <button id="othello_quit" class="mybutton" onclick="game.sendrequest(true, null,null,null)"> QUIT</button>
 

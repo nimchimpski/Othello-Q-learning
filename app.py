@@ -122,11 +122,11 @@ def play():
     BLACK = 1
     WHITE = -1
     winner = None
-    print(f'winner= {winner}')
+    # print(f'winner= {winner}')
 
     ####      GET SESSION ID
     sessionid = session.get('sessionid')
-    print(f'---sessionid={sessionid}')
+    # print(f'---sessionid={sessionid}')
 
     ####      CREATE GAME INSTANCE
     game = othello.Othello()
@@ -158,7 +158,7 @@ def play():
             ai = -1
         else:
             ai = 1
-        print(f"---human= {human}, ai= {ai}---")
+        # print(f"---human= {human}, ai= {ai}---")
 
         ####     CHECK IF NEW GAME + INITIALISE
         if request.json.get('newgame') == True:
@@ -182,13 +182,13 @@ def play():
                 db.session.add(db_row)
 
             ####    SAVE INIT BOARD TO DB
-            print(f'---board to be saved= {board}')
+            # print(f'---board to be saved= {board}')
             db_row.saveboard(sessionid, board, player, human)
             # print(f'---new db_row saved= {db_row}')
 
             ####  IF HUMAN IS BLACK RETURN VALID MOVES
-            print(f'---human= {human}, type= {type(human)}---')
-            print(f'---human == 1? {human == 1}---')
+            # print(f'---human= {human}, type= {type(human)}---')
+            # print(f'---human == 1? {human == 1}---')
             if human == 1:
                 print(f'---HUMAN IS BLACK SO GET AVAIL BOARD:',{human})
                 board = game.boardwithavails(board, human, None)

@@ -77,14 +77,14 @@ class Othello():
         return the updated board
         """
         print(f'\n++++move() for {player}, ')
-        self.printboard(board)
+        # self.printboard(board)
         # print(f'action={action}')
         # print(f'player={player}')
         if board is None:
             print("Board is None")
         availactions = self.available_actions(board, player)
-        print(f'availactions={availactions}')
-        print(f'---action= {action}')
+        # print(f'availactions={availactions}')
+        # print(f'---action= {action}')
      
         #####      IS ACTION VALID
         if action not in availactions:
@@ -135,7 +135,7 @@ class Othello():
         elif direction == (1, 1):
             compass = 'SE'
 
-        # print(f'+++++direction from {cell} in direction { compass}')
+        print(f'+++++direction from {cell} in direction { compass}')
         
         ####      CHECK FOR TEST CONDITIONS
 
@@ -145,6 +145,7 @@ class Othello():
         nextcell = cell
 
         def calcnextcell():
+            #   RETURNS THE NEXT CELL OONLY IF IT IS WITHIN BOUNDS
             # print(f'+++calcnextcell ')
             result = tuple(c + d for c,d in zip(nextcell, direction)) 
             ####       IS THE NEW CELL ON THE BOARD?
@@ -158,37 +159,41 @@ class Othello():
         while True:
             ####       CALCULATE NEXT CELL
             nextcell = calcnextcell()
+            print(f'===nextcell= {nextcell}')
             if nextcell is None:
                 return None
-            # print(f'first nextcell calc={nextcell}')
 
             ### CALCULATE opponent
             # print(f'player={player}')
             opponent = self.switchplayer(player)
-            # print(f'opponent={opponent}')
+            print(f'opponent={opponent}')
+
+            #### IF NEXT CELL IS MINE AND CAPTURED IS NOT EMPTY, RETURN CAPTURED
+
+            #### ELSE IF NEXT CELL IS ENEMY CONTINUE
 
             ####       IF NEXTCELL IS NOT opponent, ABORT?
             if not board[nextcell[0]][nextcell[1]] == opponent:
-                # print(f'NOT opponent NEIGHBOUR')
+                print(f'NOT opponent NEIGHBOUR')
                 return None
 
             ####       FOUND ENENY
-            # print(f'opponent at {nextcell} in direction {compass},')
+            print(f'opponent at {nextcell} in direction {compass},')
             captured.add(nextcell)
-            # print(f'captured={captured}')
+            print(f'captured={captured}')
 
         
             ####       LOOK FOR A PLAYER PIECE IN THAT DIRECTION TO VALIDATE MOVE
             further = calcnextcell()
-            # print(f'calc2 for player piece at end ={further}')
+            print(f'calc2 for player piece at end ={further}')
             if further and (board[further[0]][further[1]] == player):
-                # print(f'FOUND PLAYER AT END! {nextcell}')
-                # print(f'captured in this direction={captured}')
+                print(f'FOUND PLAYER AT END! {nextcell}')
+                print(f'captured in this direction={captured}')
                 return captured
             else:
             ####       NO PLAYER PIECE IN THAT DIRECTION, INVALID MOVE
-                # print(f'----NO PLAYER PIECE AT END :(')
-                # captured = set()
+                print(f'----NO PLAYER PIECE AT END :(')
+                captured = set()
                 return None
           
     def available_actions(self, board, player):
@@ -197,36 +202,37 @@ class Othello():
         """
         
         
-        # print(f'+++availale_actions for {player}')
-        # self.printboard(board)
+        print(f'+++availale_actions for {player}')
+        self.printboard(board)
         actions = {}
         ####       CREATE THE DIRECTIONS
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
-        # directions = [(0,-1), (-1,-1)]
-        # print(f'directions={directions}')
+        print(f'directions={directions}')
 
         ####        FOR EACH BOARD cell
+        print('---GO THROUGH WHOLE BOARD, LOOKING FOR EMPTY CELLS')
         for i, row in enumerate(board):
             for j, content in enumerate(row):
                 cell = (i,j)
                 # print(f'content={content}')
 
-                # print(f'\n >>>CHECKING THIS = {cell}')
+                print(f'\n >>>CHECKING THIS = {cell}')
                 if (content == 1) or (content == -1) :
-                    # print(f'content is not EMPTY nor *, so continue')
+                    print(f'content is not EMPTY nor *, so continue')
                     continue
                 
                 # print(f'cell={cell}, type={type(cell[0])}')
                 alldirscaptured = set()
                 ####       FOR EACH DIRECTION
                 for direction in directions:
+                    print(f'---checking direction= {direction}')
                     
                     ####        IF VALID , ADD MOVE TO SET, ADD CAPTURED PIECES TO SET
                     onedircaptured = self.direction_checker(cell, direction, player, board )
-                    # print(f'onedir_captured={onedircaptured}')
+                    print(f'onedir_captured={onedircaptured}')
                     ####    IF THERE IS ANY ADD TO TOAL CAPTURED FOR THIS cell
                     if onedircaptured:
-                        # print(f'onedir_captured=true')
+                        print(f'onedir_captured=true')
                         alldirscaptured.update(onedircaptured)
                     else:
                         continue

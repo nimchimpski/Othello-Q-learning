@@ -24,13 +24,20 @@ class Othello():
         self.winner = None
 
     # BOARD SHOWING AVAILABLE MOVES
-    def boardwithavails(self, board,  player):  
+    def boardwithavails(self, board,  human, aimove):  
         print(' ++++boardwithavails')
     
         # print(f'player={player}')
-        for cell in self.available_actions( board, player):
+        for cell in self.available_actions( board, human):
             print(f'cell={cell}')
             board[cell[0]][cell[1]] = '*'
+        # add ai's last move
+        if aimove is not None:
+            print(f'---human= {human}')
+            if human == 1:
+                board[aimove[0]][aimove[1]] = '-'
+            elif human == -1:
+                board[aimove[0]][aimove[1]] = '+'
         # print(f"for response board= {board}")
         self.printboard(board)
         return board
@@ -66,25 +73,20 @@ class Othello():
 
     def move(self, board, action, player):
         """
-        Make the move `action` for the current player.
         `action` must be a tuple `(i,j)`.
         return the updated board
         """
-        # print(f'\n++++move(), ')
-        # print(f'board={board}')
+        print(f'\n++++move() for {player}, ')
+        self.printboard(board)
         # print(f'action={action}')
         # print(f'player={player}')
         if board is None:
             print("Board is None")
         availactions = self.available_actions(board, player)
-        # print(f'availactions={availactions}')
+        print(f'availactions={availactions}')
+        print(f'---action= {action}')
      
-        # print(f'player={self.player}')
-
-
         #####      IS ACTION VALID
-         # Check if the action is valid
-        # assert action in availactions, f"Action {action} not in available actions {availactions}"
         if action not in availactions:
             print("\n>>>>Error: Action not in available_actions.")
             return board  # Or handle the error differently
@@ -94,6 +96,7 @@ class Othello():
         ####     GET BITS TO FLIP
       
         bitstoflip = availactions[action]
+        print(f'---bitstoflip= {bitstoflip}')
     
 
         ####  MARK BOARD WITH FLIPPED PIECES
@@ -104,10 +107,11 @@ class Othello():
         
           #####     MARK BOARD WITH ACTUAL MOVE
         board[action[0]][action[1]] = player
-        # print(f'board with flips and move= {board}')
+        print(f'board with flips and move')
+        self.printboard(board)
 
       
-        # print('END OF MOVE()')
+        print('END OF MOVE()')
 
         return board
 

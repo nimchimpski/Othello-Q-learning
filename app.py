@@ -191,7 +191,7 @@ def play():
             print(f'---human == 1? {human == 1}---')
             if human == 1:
                 print(f'---HUMAN IS BLACK SO GET AVAIL BOARD:',{human})
-                board = game.boardwithavails(board, human)
+                board = game.boardwithavails(board, human, None)
                 # print(f'---response board board={board}')
                 player = 1 # DELET THIS?
         
@@ -240,11 +240,14 @@ def play():
                 aimove = aiplayer.choose_q_action(board, player, game, epsilon=False)
                 print(f'---ai move= {aimove}')
 
+                # print(f'---board before ai move ')
+                # game.printboard(board)
                 #### MAKE AI MOVE
                 game.move( board, aimove[0], player )
 
                 ####  SAVE BOARD    
-                print(f'---board + ai move TO SAVE={board}---')
+                # print(f'---board + ai move TO SAVE---')
+                # game.printboard(board)
                 db_row.saveboard(sessionid, board, player, human)
 
                 ####  CHECK TIME TAKEN AND DELAY IF LESS THAN 2 SECONDS
@@ -256,7 +259,7 @@ def play():
             else:
                 print(f'---NO VALID MOVES FOR AI, SO CHECK HUMAN---')
                 player = human
-                board = game.boardwithavails(board, human)
+                board = game.boardwithavails(board, human, None)
                 # CHECK HUMAN HAS MOVES - IF NOT GAME OVER 
                 humanavails = game.available_actions(board, player)
                 print(f'---avail moves hum={humanavails}')  
@@ -284,7 +287,9 @@ def play():
         db_row.saveboard(sessionid, board, player, human)
 
         if player == human:
-
+            print(f'---ai move??? {aimove}')
+            print(f'--aimove[0]], {aimove[0]}')
+            aimove = aimove[0]
             ####   ADD VALID MOVES
 
             # Ai HAS MOVED - CHECK IF HUMAN CAN MOVE.
@@ -295,12 +300,17 @@ def play():
                 player = ai
             else:
                 print(f'---adding valid moves to board')
-                board = game.boardwithavails(board, human)
+                
+                board = game.boardwithavails(board, human, aimove)
         # if winner:
             # print(f'---q table = {aiplayer.q}')
         ####  PREPARE RESPONSE
-        responsedict = {'gameover': winner, 'player': player, 'board': board}
-        print(f'---response normal  {responsedict}')
+        # responsedict = {'gameover': winner, 'player': player, 'board': board}
+        print(f'---respnse gameover={winner}')
+        print(f'---respnse player= {player}')
+        game.printboard(board)
+        # print(f'---respnse aimove= {aimove}')
+        # print(f'---response normal  {responsedict}')
         # return json with board
         return jsonify({'gameover': winner, 'player': player, 'board': board})
     

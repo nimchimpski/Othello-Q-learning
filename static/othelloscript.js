@@ -261,6 +261,12 @@ class Othellogame {
                     cell.className = "disk";
                     this.disableElement(cell.id);
                 }
+                else if (board[i][j] === '+') {
+                    cell.className = "disk blackdisk last"
+                }
+                else if (board[i][j] === '-') {
+                    cell.className = "disk whitedisk last"
+                }
                 else {
                     cell.classList.remove("validmove");
                     this.disableElement(cell.id);

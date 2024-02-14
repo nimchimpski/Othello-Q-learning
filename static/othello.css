@@ -13,6 +13,7 @@
     border-radius: 50%; /* this makes the shape a circle */
 }
 /* White disk */
+
 .whitedisk {
     background-color: white;
     border: 1px solid #ffffff; /* slight border for better visibility on white backgrounds */
@@ -24,6 +25,22 @@
 }
 .validmove {
     background-color: hsl(0, 0%, 22%);
+}
+
+.last {
+    position:relative
+}
+
+.last::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px; /* Adjust size of the dot */
+    height: 10px; /* Adjust size of the dot */
+    background-color: red; /* Color of the dot */
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
 }
 
 #white {

@@ -9,6 +9,7 @@ import json
 import uuid
 import os
 import pickle
+import time
 
 import othello as othello
 # hello me
@@ -231,16 +232,13 @@ def play():
                 print(f'---AI MOVES AVAILABLE---')
                 print(f'---ai avail actions= {game.available_actions(board, player)}')  
 
-                '''
-                AI MOVE
+                ####     START THE TIMER
+                start_time = time.time()
 
-                aimove = AI.choose_action(board, player, epsilon=False)
-                '''
                 # inputmove = input('enter ai move: ')
                 # aimove = tuple(int(char) for char in inputmove)
                 aimove = aiplayer.choose_q_action(board, player, game, epsilon=False)
                 print(f'---ai move= {aimove}')
-
 
                 #### MAKE AI MOVE
                 game.move( board, aimove[0], player )
@@ -248,6 +246,12 @@ def play():
                 ####  SAVE BOARD    
                 print(f'---board + ai move TO SAVE={board}---')
                 db_row.saveboard(sessionid, board, player, human)
+
+                ####  CHECK TIME TAKEN AND DELAY IF LESS THAN 2 SECONDS
+                ai_time = time.time() - start_time
+                if ai_time < 2.5:
+                    delay = 2.5 - ai_time
+                    time.sleep(delay)
 
             else:
                 print(f'---NO VALID MOVES FOR AI, SO CHECK HUMAN---')

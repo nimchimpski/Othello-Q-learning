@@ -217,8 +217,8 @@ class Othello():
                 # print(f'content={content}')
 
                 print(f'\n >>>CHECKING THIS = {cell}')
-                if (content == 1) or (content == -1) :
-                    print(f'content is not EMPTY nor *, so continue')
+                if (content is not 0) :
+                    print(f'content is not 0, so continue')
                     continue
                 
                 # print(f'cell={cell}, type={type(cell[0])}')

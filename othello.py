@@ -11,7 +11,7 @@ VALID = '*'
 
 class Othello():
 
-    def __init__(self, size=4):
+    def __init__(self, size=6):
         """
         Initialize game board.
         Each game board has
@@ -150,7 +150,7 @@ class Othello():
 
         print(f'+++++direction_checker().  {compass} from candidate cell{ cell}')
         # self.printboard(board)
-
+        originalcell = cell
         ####       SET UP VARIABLES
         captured = set()
         # nextcell = cell
@@ -163,30 +163,33 @@ class Othello():
 
             ####       CALCULATE NEXT CELL
             cell = self.calcnextcell(board, cell, direction)
-            print(f'===new cell= {cell}')
+
             # if newcell is not in bounds
             if cell is None:
                 # print(f'---cell is None')   
                 return None
+            print(f'===new cell= {cell}, original = {originalcell}')
 
             #### IF THE cell IS EMPTY, RETURN NONE
             if board[cell[0]][cell[1]] == 0:
-                print(f'cell is empty, so returning None')
+                # print(f'cell is empty, so returning None')
                 return None
+            
+            
+            ####   IF  CELL IS MINE 
+            if board[cell[0]][cell[1]]  == player:
+                ####    AND  THERE ARE CAPTURED
+                if captured:
+                    print(f'{cell} is mine and captured is not empty, so returning = {captured}')
+                    return captured
+                else:
+                    return None
 
-            #### IF  cell IS MINE AND CAPTURED IS NOT EMPTY, RETURN CAPTURED
-            elif captured and board[cell[0]][cell[1]]  == player:
-                print(f'{cell} is mine and captured is not empty, so returning = {captured}')
-
-                return captured
-
-            #### ELSE IF NEXT cell IS ENEMY, ADD TO CAPTURED
+            #### ELSE IF NEXT CELL IS ENEMY, ADD TO CAPTURED
             elif board[cell[0]][cell[1]] == opponent:
                 print(f'opponent at {cell} in direction {compass},')
                 captured.add(cell)
                 print(f'captured={captured}')
-                
-            #
 
         
           
@@ -196,7 +199,7 @@ class Othello():
         """
         
         
-        print(f'+++AVAILABLE_ACTIONS FOR {player}')
+        print(f'\n+++AVAILABLE_ACTIONS FOR {player}')
         self.printboard(board)
         actions = {}
         ####       CREATE THE DIRECTIONS

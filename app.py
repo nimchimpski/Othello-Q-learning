@@ -116,7 +116,7 @@ def index():
 
 @app.route('/play', methods=['POST', 'GET'])
 def play():
-    print('>>>PLAY ROUTE GET')
+    # print('>>>PLAY ROUTE GET')
 
     EMPTY = 0
     BLACK = 1
@@ -203,7 +203,7 @@ def play():
 
         #    NOT A NEW GAME
 
-        print('||| AFTER NEWGAME CONDITION')
+        # print('||| AFTER NEWGAME CONDITION')
         #### GET BOARD FROM DB
         board = db_row.getboard(sessionid)
         print(f"board retrieved1 = {board}")
@@ -211,7 +211,7 @@ def play():
         humanmove = request.json.get('humanmove')
         
         if humanmove: # ONLY SENT ONCE AFTER MOVE TO GET UPDATED BOARD
-            print(f'---IN "IF HUMANMOVE"---')
+            # print(f'\n---" HUMANMOVE"---\n')
             #### MEANS WE ONLY WANT BOARD WITH FLIPS
             humanmovetuple = tuple(int(char) for char in humanmove)
 
@@ -225,7 +225,7 @@ def play():
         else :
             ####             AI MOVE
 
-            print(f'----GET AI MOVE. NO HUMANMOVE...HUMANMOVE WAS SAVED IN LAST REQUEST---')
+            print(f'\n----GET AI MOVE. NO HUMANMOVE...HUMANMOVE WAS SAVED IN LAST REQUEST---\n')
             print(f"---player AI? {player}---")
             ####  CHECK FOR MOVES AVAILABLE FOR AI
             if  game.available_actions(board, player):

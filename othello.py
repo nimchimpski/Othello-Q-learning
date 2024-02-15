@@ -5,7 +5,7 @@ import pickle
 from copy import deepcopy
 
 EMPTY = 0
-BLACK = 1nano 
+BLACK = 1
 WHITE = -1
 VALID = '*'
 

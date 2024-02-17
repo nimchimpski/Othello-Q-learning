@@ -191,8 +191,6 @@ class Othello():
                 captured.add(cell)
                 print(f'captured={captured}')
 
-        
-          
     def available_actions(self, board, player):
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
@@ -328,12 +326,12 @@ class OthelloAI():
         player = game_instance.player
         # print(f"+++update")
         # print(f"---old_state={old_state}, action={action}, new_state={new_state}, reward={reward}")
-        old = self.get_q_value(player, old_state, action)
+        old = self.get_q_value( old_state, action)
         best_future = self.best_future_reward(new_state, game_instance)
-        self.update_q_value(player, old_state, action, old, reward, best_future)
+        self.update_q_value( old_state, action, old, reward, best_future)
         # print(f"+++>>>update: self.q={self.q}")
 
-    def get_q_value(self, player, state, action):
+    def get_q_value(self, state, action):
         """
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
@@ -347,7 +345,7 @@ class OthelloAI():
         # print(f"---state type= {type(statetuple)}")
 
         
-        q =  self.q.get((player, statetuple, action), 0)
+        q =  self.q.get(( statetuple, action), 0)
         # print(f"+++>>>get_q_value: {state}, {action} = q {q}")
         if not q:
             return None
@@ -356,7 +354,7 @@ class OthelloAI():
     def statetotuple(self, state):
         return tuple(tuple(row) for row in state)
 
-    def update_q_value(self, player, state, action, old_q, reward, future_rewards):
+    def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
         Update the Q-value for the state `state` and the action `action`
         given the previous Q-value `old_q`, a current reward `reward`,
@@ -390,7 +388,7 @@ class OthelloAI():
         result = old_q + (self.alpha * (newvalest - old_q))
         result = round(result, 2)
         # print(f"---result={result}")
-        self.q[player, statetuple, action] = result
+        self.q[statetuple, action] = result
         # print(f"---updateq self.q = {self.q[statetuple, action]}")
         
     def best_future_reward(self, state, game_instance):
@@ -416,7 +414,7 @@ class OthelloAI():
         for action in actions:
             # print(f"---action={action}")
             # print(f"---q = {self.get_q_value(state, action)})")
-            n = self.get_q_value(game_instance.player, state, action)
+            n = self.get_q_value(state, action)
             if n is None:
                 n = 0
             qlist.append(n)
@@ -434,7 +432,7 @@ class OthelloAI():
 
         # get max of the q values
 
-    def choose_q_action(self, state, player, game_instance, epsilon=True):
+    def choose_q_action(self, state, game_instance, epsilon=True):
         """
         Given a state `state`, return an action `(i, j)` to take.
 
@@ -463,12 +461,16 @@ class OthelloAI():
                     cell = -1
         # print(f"---state after={state}")
 
-        actions = game_instance.available_actions(state, player)
+        ####    GET AVAILABLE ACTIONS
+
+        actions = game_instance.available_actions(state, 1)
         # print(f"---actions={actions}")
         if not actions:
             return None
         action = None
+
         ####  IF ONLY ONE ACTION RETURN IT
+
         if len(actions) == 1:
             # print(f"---only one action, so returning it")
             key = next(iter(actions))
@@ -500,7 +502,7 @@ class OthelloAI():
             for action in actions:
                 assert action is not None
                 # print(f"---action={action}")
-                q = self.get_q_value(player, state, action)
+                q = self.get_q_value(state, action)
                 # print(f"---q={q}")
 
                 ###    UNSEARCHED STATES/ACTIONS GET AWARDED 0 TODO: ???
@@ -541,14 +543,24 @@ class OthelloAI():
         return result
     
     def save_data(self, filename):
-        with open('qtable.pickle', 'wb') as f:
+        with open(f'{filename}.pickle', 'wb') as f:
             # print(f"+++saving qtable: {self.q}")
             pickle.dump(self.q, f)
 
     def load_data(self, filename ):
-        with open('qtable.pickle', 'rb') as f:
+        with open(f'{filename}.pickle', 'rb') as f:
             q = pickle.load(f)
             return q
+    
+    @staticmethod
+    def invertboard(board):
+        # print(f'+++invertboard')   
+        # Othello().printboard(board)
+        
+        board = [[-cell for cell in row] for row in board]
+        # print()
+        # Othello().printboard(board)      
+        return board
 
 def train(n):
     """
@@ -557,7 +569,7 @@ def train(n):
 
     ai = OthelloAI()
     #### LOAD EXISTING Q TABLE
-    ai.q = ai.load_data('qtable')
+    # ai.q = ai.load_data('qtable')
     
     # ai0wins = 0
     completed = 0
@@ -577,7 +589,7 @@ def train(n):
 
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-            # print(f"\n^^^player = {game.player}")
+            print(f"\n^^^player = {game.player}")
             opponent = game.switchplayer(game.player)
             # print(f"^^^opponent = {opponent}")
 
@@ -588,8 +600,14 @@ def train(n):
             # print(f"^^^ STATECOPY=")
             # game.printboard(new_state)
 
+            ####     CHECK IF PLAYEING AS WHITE
+            if game.player == WHITE:
+                lookup_board = OthelloAI.invertboard(new_state)
+            else:
+                lookup_board = new_state
+
             ####      CHOOSE ACTION FROM Q TABLE
-            actions = ai.choose_q_action(new_state, game.player, game)
+            actions = ai.choose_q_action(lookup_board, game)
             if  actions is None:
                 # print(f"---no actions")
                 game.player = game.switchplayer(game.player)
@@ -708,7 +726,7 @@ def train(n):
             print(f"played games = {completed}")
         # print(f"^^^q table at end of game = {ai.q}")
     print(f"Done training {completed} games")
-    # print(f"^^^q table = {ai.q}")
+    print(f"^^^q table = {ai.q}")
     ####      RETURN THE TRAINED AI
     return ai
 

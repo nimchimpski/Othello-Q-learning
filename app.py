@@ -19,7 +19,10 @@ app = Flask(__name__ )
 app.secret_key = "supermofustrongpword"
 
 aiplayer = othello.OthelloAI()
-aiplayer.q = aiplayer.load_data('qtable')
+aiplayer.q = aiplayer.load_data('qtables/single_player_qtable')
+if not aiplayer.q:
+    aiplayer.q = {}
+    print(f'---no q table loaded---')
 # print(f'---loaded q table = {aiplayer.q}')
 
 
@@ -156,8 +159,10 @@ def play():
         humanmove = request.json.get('humanmove')
         if human == 1:
             ai = -1
+            aiplayer.colour = -1
         else:
             ai = 1
+            aiplayer.colour = 1
         # print(f"---human= {human}, ai= {ai}---")
 
         ####     CHECK IF NEW GAME + INITIALISE
@@ -231,23 +236,31 @@ def play():
             if  game.available_actions(board, player):
                 print(f'---AI MOVES AVAILABLE---')
                 print(f'---ai avail actions= {game.available_actions(board, player)}')  
-
+                game.printboard(board)
                 ####     START THE TIMER
                 start_time = time.time()
 
-                # inputmove = input('enter ai move: ')
-                # aimove = tuple(int(char) for char in inputmove)
-                aimove = aiplayer.choose_q_action(board, player, game, epsilon=False)
+                ####     IF AI IS WHITE , INVERT THE BOARD
+                if player == -1:
+                    aiboard = aiplayer.invertboard(board)
+                    print(f'---player is white : invertedboard  board= ')
+                    game.printboard(board)
+                else:
+                    aiboard = board
+
+                ####    GET MOVE FROM Q TABLE
+
+                aimove = aiplayer.choose_q_action(aiboard, game, epsilon=False)
                 print(f'---ai move= {aimove}')
 
-                # print(f'---board before ai move ')
-                # game.printboard(board)
+                print(f'---board before ai move ')
+                game.printboard(board)
                 #### MAKE AI MOVE
                 game.move( board, aimove[0], player )
 
                 ####  SAVE BOARD    
-                # print(f'---board + ai move TO SAVE---')
-                # game.printboard(board)
+                print(f'---board + ai move TO SAVE---')
+                game.printboard(board)
                 db_row.saveboard(sessionid, board, player, human)
 
                 ####  CHECK TIME TAKEN AND DELAY IF LESS THAN 2 SECONDS

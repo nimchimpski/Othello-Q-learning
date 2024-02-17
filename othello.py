@@ -2,6 +2,7 @@ import math
 import random
 import time
 import pickle
+import os
 from copy import deepcopy
 
 EMPTY = 0
@@ -25,21 +26,21 @@ class Othello():
 
     # BOARD SHOWING AVAILABLE MOVES
     def boardwithavails(self, board,  human, aimove):  
-        print(' ++++boardwithavails')
+        # print(' ++++boardwithavails')
     
         # print(f'player={player}')
         for cell in self.available_actions( board, human):
-            print(f'cell={cell}')
+            # print(f'cell={cell}')
             board[cell[0]][cell[1]] = '*'
         # add ai's last move
         if aimove is not None:
-            print(f'---human= {human}')
+            # print(f'---human= {human}')
             if human == 1:
                 board[aimove[0]][aimove[1]] = '-'
             elif human == -1:
                 board[aimove[0]][aimove[1]] = '+'
         # print(f"for response board= {board}")
-        self.printboard(board)
+        # self.printboard(board)
         return board
        
     def switchplayer(self, player):
@@ -76,9 +77,8 @@ class Othello():
         `action` must be a tuple `(i,j)`.
         return the updated board
         """
-        print(f'\n++++move() for {player}, ')
+        # print(f'++++move() for {player}, ')
         # self.printboard(board)
-        # print(f'action={action}')
         # print(f'player={player}')
         if board is None:
             print("Board is None")
@@ -96,7 +96,7 @@ class Othello():
         ####     GET BITS TO FLIP
       
         bitstoflip = availactions[action]
-        print(f'---bitstoflip= {bitstoflip}')
+        # print(f'---bitstoflip= {bitstoflip}')
     
 
         ####  MARK BOARD WITH FLIPPED PIECES
@@ -107,11 +107,11 @@ class Othello():
         
           #####     MARK BOARD WITH ACTUAL MOVE
         board[action[0]][action[1]] = player
-        print(f'board with flips and move')
-        self.printboard(board)
+        # print(f'board with flips and move')
+        # self.printboard(board)
 
       
-        print('END OF MOVE()')
+        # print('END OF MOVE()')
 
         return board
 
@@ -148,7 +148,7 @@ class Othello():
         elif direction == (1, 1):
             compass = 'SE'
 
-        print(f'+++++direction_checker().  {compass} from candidate cell{ cell}')
+        # print(f'+++++direction_checker().  {compass} from candidate cell{ cell}')
         # self.printboard(board)
         originalcell = cell
         ####       SET UP VARIABLES
@@ -157,7 +157,7 @@ class Othello():
         opponent = self.switchplayer(player)
         ####   RUN LOOP TO CHECK DIRECTION
         while True:
-            print(f'---START SEARCH LOOP')
+            # print(f'---START SEARCH LOOP')
             # print(f'---direction={direction}')
             # print(f'opponent={opponent}')
 
@@ -168,7 +168,7 @@ class Othello():
             if cell is None:
                 # print(f'---cell is None')   
                 return None
-            print(f'===new cell= {cell}, original = {originalcell}')
+            # print(f'===new cell= {cell}, original = {originalcell}')
 
             #### IF THE cell IS EMPTY, RETURN NONE
             if board[cell[0]][cell[1]] == 0:
@@ -180,16 +180,16 @@ class Othello():
             if board[cell[0]][cell[1]]  == player:
                 ####    AND  THERE ARE CAPTURED
                 if captured:
-                    print(f'{cell} is mine and captured is not empty, so returning = {captured}')
+                    # print(f'{cell} is mine and captured is not empty, so returning = {captured}')
                     return captured
                 else:
                     return None
 
             #### ELSE IF NEXT CELL IS ENEMY, ADD TO CAPTURED
             elif board[cell[0]][cell[1]] == opponent:
-                print(f'opponent at {cell} in direction {compass},')
+                # print(f'opponent at {cell} in direction {compass},')
                 captured.add(cell)
-                print(f'captured={captured}')
+                # print(f'captured={captured}')
 
     def available_actions(self, board, player):
         """
@@ -197,15 +197,15 @@ class Othello():
         """
         
         
-        print(f'\n+++AVAILABLE_ACTIONS FOR {player}')
-        self.printboard(board)
+        # print(f'\n+++AVAILABLE_ACTIONS FOR {player}')
+        # self.printboard(board)
         actions = {}
         ####       CREATE THE DIRECTIONS
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
         # print(f'directions={directions}')
 
         ####        FOR EACH BOARD cell
-        print('---GO THROUGH WHOLE BOARD, LOOKING FOR EMPTY CELLS')
+        # print('---GO THROUGH WHOLE BOARD, LOOKING FOR EMPTY CELLS')
         for i, row in enumerate(board):
             for j, content in enumerate(row):
                 cell = (i,j)
@@ -215,7 +215,7 @@ class Othello():
                 if (content != 0) :
                     # print(f'content is not 0, so continue')
                     continue
-                print(f'---{cell} is empty, so possibly valid: checking directions')
+                # print(f'---{cell} is empty, so possibly valid: checking directions')
                 # print(f'cell={cell}, type={type(cell[0])}')
                 alldirscaptured = set()
                 ####       FOR EACH DIRECTION
@@ -224,10 +224,10 @@ class Othello():
                     
                     ####        IF VALID , ADD MOVE TO SET, ADD CAPTURED PIECES TO SET
                     onedircaptured = self.direction_checker(board, cell, direction, player )
-                    print(f'onedir_captured={onedircaptured}')
+                    # print(f'onedir_captured={onedircaptured}')
                     ####    IF THERE IS ANY ADD TO TOAL CAPTURED FOR THIS cell
                     if onedircaptured:
-                        print(f'onedir_captured=true, so adding to alldirscaptured')
+                        # print(f'onedir_captured=true, so adding to alldirscaptured')
                         alldirscaptured.update(onedircaptured)
                     else:
                         continue
@@ -241,7 +241,7 @@ class Othello():
                 else:
                     continue
                     # print(f'alldirs_captured=false') 
-        print(f'>>>>>available actions={actions}')
+        # print(f'>>>>>available actions={actions}')
         self.availactions = actions
         # print(f'+--end of available_actions()')
         return actions
@@ -303,7 +303,7 @@ class Othello():
 class OthelloAI():
     ### AI CAN USE CLASS ATTRIBUTES AS IT WILL NOT BE SERVED/SUBJECT TO REQUESTS
 
-    def __init__(self, alpha=0.5, epsilon=0.1):
+    def __init__(self, alpha=0.3, epsilon=0.1):
         """
         Initialize AI with an empty Q-learning dictionary,
         an alpha (learning) rate, and an epsilon rate.
@@ -316,6 +316,7 @@ class OthelloAI():
         self.q = dict() # VALUE CAN BE NONE FOR UNEXPLORED STATES
         self.alpha = alpha
         self.epsilon = epsilon
+        self.colour = BLACK
 
     def update(self, old_state, action, new_state, reward, game_instance):
         """
@@ -463,7 +464,7 @@ class OthelloAI():
 
         ####    GET AVAILABLE ACTIONS
 
-        actions = game_instance.available_actions(state, 1)
+        actions = game_instance.available_actions(state, self.colour)
         # print(f"---actions={actions}")
         if not actions:
             return None
@@ -562,14 +563,19 @@ class OthelloAI():
         # Othello().printboard(board)      
         return board
 
-def train(n):
+def train(n, alpha=0.3, epsilon=0.1, filename='qtable'):
     """
     Train an AI by playing `n` games against itself.
     """
+    filepath = os.path.join('qtables', filename)
+    ####     IF THE  FILE EXOSTS IN QTABLES...
+    if os.path.exists(filepath):
+          #### LOAD IT
+        ai.q = ai.load_data(filepath)
 
-    ai = OthelloAI()
-    #### LOAD EXISTING Q TABLE
-    # ai.q = ai.load_data('qtable')
+
+    ai = OthelloAI(alpha, epsilon)
+
     
     # ai0wins = 0
     completed = 0
@@ -589,7 +595,7 @@ def train(n):
 
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-            print(f"\n^^^player = {game.player}")
+            # print(f"\n^^^player = {game.player}")
             opponent = game.switchplayer(game.player)
             # print(f"^^^opponent = {opponent}")
 
@@ -726,9 +732,101 @@ def train(n):
             print(f"played games = {completed}")
         # print(f"^^^q table at end of game = {ai.q}")
     print(f"Done training {completed} games")
-    print(f"^^^q table = {ai.q}")
+    # print(f"^^^q table = {ai.q}")
+
+    ai.save_data(filepath)
+
     ####      RETURN THE TRAINED AI
     return ai
+
+def evaluate(n, testq, benchmarkq):
+    """
+    Evaluate the performance of `ai` against `benchmarkai` by playing `n` games.
+    """
+    
+       
+    testai = OthelloAI()
+    if testq:
+        testai.q = testai.load_data(testq)
+    benchmarkai = OthelloAI()
+    if benchmarkq:
+        benchmarkai.q = benchmarkai.load_data(benchmarkq)
+    # print(f"---benchmark.q={benchmarkai.q}")
+    # print(f'---tyoe of benchmarkai.q={type(benchmarkai.q)}')    
+
+    wins = 0
+    losses = 0
+    ties = 0
+
+    # print(f'---testai.q={testai.q}')
+    ####     CALC EVERY OTHER GAME
+    for i in range(n):
+        # every other game, switch starter:
+        if i % 2 == 0:
+            testai.colour = BLACK
+            benchmarkai.colour = WHITE
+        else:
+            testai.colour = WHITE
+            benchmarkai.colour = BLACK
+        print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
+        game = Othello()
+ 
+        while not game.gameover(game.state):
+            print(f"\n===MOVE----")
+
+            print(f'---player = {game.player}') 
+            
+
+            ####    FOR WHOEVER IS PLAYING, CHOOSE AN ACITON
+            if game.player == testai.colour:
+                print(f"===game.player = {game.player}  \n---testai.colour = {testai.colour}")
+                #### IF PLAYING AS WHITE, INVERT BOARD
+                if testai.colour == WHITE:
+                    print(f'---testai colour = white so invert board')
+                    aiboard= OthelloAI.invertboard(game.state)
+                elif testai.colour == BLACK:
+                    aiboard = game.state
+                action = testai.choose_q_action(aiboard, game, epsilon=False)
+           
+            else:
+                print(f"=== white player")
+                action = benchmarkai.choose_q_action(game.state, game, epsilon=False)
+ 
+
+            ####    MAKE THE MOVE IF THERE IS ONE
+            print(f"===action={action}")
+            if action is not None:
+                game.move(game.state, action[0], game.player)
+                print(f"===game state after move")
+                game.printboard(game.state)
+
+            ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVVE
+            if game.gameover(game.state):
+                print(f"===game over")
+                game.calc_winner(game.state)
+                game.printboard(game.state)
+                if game.winner == BLACK:
+                    wins += 1
+                elif game.winner == WHITE:
+                    losses += 1
+                else:
+                    ties += 1
+                break
+            
+
+            game.player = game.switchplayer(game.player)
+        print(f"---END OF GAME {i+1}")
+    
+    # win/loss ratio
+    winlossratio= wins/losses
+    winrate = wins / n  
+        
+    print(f"wins: {wins}, losses: {losses}, ties: {ties}")
+    print(f"win/loss ratio= {winlossratio}:1")
+    print(f"winrate= {winrate}")
+    ### print the q table used
+    print(f"testq= {testq}")
+
 
 
 if __name__ == "__main__":

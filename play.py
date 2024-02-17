@@ -1,14 +1,13 @@
 from othello import *
 
-ai = train(1000)
+# ai = train(5000, 0.3, 0.1, 'bigq')
 
-ai.save_data('qtables/single_player_qtable')
+
+# print(f'---len(ai.q)={len(ai.q)}')
     
-# print(ai.q[(1,3,5,7),(0,1)])
-# print(ai.q[(1,3,5,7),(3,1)])
+evaluate(500, 'qtables/bigq', None)
 
 
-
-# play(ai,0)
+# evaluate(2,'qtables/single_player_qtable' , None)
 
 

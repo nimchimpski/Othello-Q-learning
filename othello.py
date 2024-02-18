@@ -12,7 +12,7 @@ VALID = '*'
 
 class Othello():
 
-    def __init__(self, size=6):
+    def __init__(self, size=4):
         """
         Initialize game board.
         Each game board has
@@ -21,7 +21,8 @@ class Othello():
         # (print('\n+++init'))
         self.size = size
         self.state = self.create_board()
-        self.player = BLACK
+        self.player = 1
+        self.playercolour = 'BLACK' if self.player == 1 else 'WHITE'
         self.winner = None
 
     # BOARD SHOWING AVAILABLE MOVES
@@ -53,10 +54,18 @@ class Othello():
         else:
             return BLACK
 
-    def printboard(self, board):
-        for row in board:
-            print(row)
-
+    def printboard(self, board, lastmove=None):
+        RED = '\033[91m'
+        ENDC = '\033[0m'        
+        symbol_map = {1: 'X', -1: 'O', 0: '.'}
+        for i, row in enumerate(board):
+            row_str = ''
+            for j, cell in enumerate(row):
+                if lastmove == (i,j):
+                    row_str += RED + f' {symbol_map[cell]} ' + ENDC
+                else:
+                    row_str += f' {symbol_map[cell]} '
+            print(row_str)
     def create_board(self):
         # print('+++create_board')
         board = []
@@ -464,8 +473,8 @@ class OthelloAI():
 
         ####    GET AVAILABLE ACTIONS
 
-        actions = game_instance.available_actions(state, self.colour)
-        # print(f"---actions={actions}")
+        actions = game_instance.available_actions(state, BLACK)
+        print(f"---availactions={actions}")
         if not actions:
             return None
         action = None
@@ -567,22 +576,22 @@ def train(n, alpha=0.3, epsilon=0.1, filename='qtable'):
     """
     Train an AI by playing `n` games against itself.
     """
-    filepath = os.path.join('qtables', filename)
+    ai = OthelloAI(alpha, epsilon)
+    
+    filepath = os.path.join(f'qtables', filename)
+    print(f"---filepath={filepath}")
     ####     IF THE  FILE EXOSTS IN QTABLES...
-    if os.path.exists(filepath):
+    if os.path.exists(f'{filepath}.pickle'):
+        print(f"Loading qtable from {filepath}")
           #### LOAD IT
         ai.q = ai.load_data(filepath)
 
-
-    ai = OthelloAI(alpha, epsilon)
-
-    
     # ai0wins = 0
     completed = 0
     ####      PLAY N GAMES
     for i in range(n):
         
-        # print(f"Playing training game {i + 1}")
+        print(f"Playing training game {i + 1}")
         game = Othello()
         # print(f"^^^q dict={ai.q}")
 
@@ -602,7 +611,7 @@ def train(n, alpha=0.3, epsilon=0.1, filename='qtable'):
             ####      KEEP TRACK OF CURRENT STATE AND ACTION
             new_state = deepcopy(game.state)
             # print(f"^^^GAME.STATE=")
-            # game.printboard(game.state)
+            game.printboard(game.state)
             # print(f"^^^ STATECOPY=")
             # game.printboard(new_state)
 
@@ -615,7 +624,7 @@ def train(n, alpha=0.3, epsilon=0.1, filename='qtable'):
             ####      CHOOSE ACTION FROM Q TABLE
             actions = ai.choose_q_action(lookup_board, game)
             if  actions is None:
-                # print(f"---no actions")
+                print(f"---no actions")
                 game.player = game.switchplayer(game.player)
                 continue
 
@@ -769,36 +778,47 @@ def evaluate(n, testq, benchmarkq):
             testai.colour = WHITE
             benchmarkai.colour = BLACK
         print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
+        print(f"---testai.colour={testai.colour}")
         game = Othello()
  
         while not game.gameover(game.state):
-            print(f"\n===MOVE----")
-
-            print(f'---player = {game.player}') 
+            # print(f"\n===MOVE----")
             
 
             ####    FOR WHOEVER IS PLAYING, CHOOSE AN ACITON
             if game.player == testai.colour:
-                print(f"===game.player = {game.player}  \n---testai.colour = {testai.colour}")
+                ####    MOVE IS FOR TESTAI
+                print(f"\n===TESTAI TO MOVE ")
+                print(f'===board before move')
+                game.printboard(game.state)
+                print(f"===game.player= {game.player}  \n---testai.colour = {testai.colour}")
                 #### IF PLAYING AS WHITE, INVERT BOARD
                 if testai.colour == WHITE:
                     print(f'---testai colour = white so invert board')
                     aiboard= OthelloAI.invertboard(game.state)
+                    print(f'---aiboard after invert')
+                    game.printboard(aiboard)
                 elif testai.colour == BLACK:
                     aiboard = game.state
+                # print(f'---aiboard for getting action')
+                # game.printboard(aiboard)
                 action = testai.choose_q_action(aiboard, game, epsilon=False)
            
             else:
-                print(f"=== white player")
+                ####   MVOE IS NOT TESTAI
+                print(f"\n=== BENCHMARK TO MOVE ")
+                print(f'===board before move')
+                game.printboard(game.state)
                 action = benchmarkai.choose_q_action(game.state, game, epsilon=False)
- 
+                print(f"===game.player= {game.playercolour}  \n---benchmarkai.colour = {benchmarkai.colour}")
+            
 
             ####    MAKE THE MOVE IF THERE IS ONE
             print(f"===action={action}")
             if action is not None:
                 game.move(game.state, action[0], game.player)
                 print(f"===game state after move")
-                game.printboard(game.state)
+                game.printboard(game.state, action[0])
 
             ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVVE
             if game.gameover(game.state):
@@ -818,7 +838,10 @@ def evaluate(n, testq, benchmarkq):
         print(f"---END OF GAME {i+1}")
     
     # win/loss ratio
-    winlossratio= wins/losses
+    if losses == 0:
+        winlossratio = 1
+    else:
+        winlossratio= wins/losses
     winrate = wins / n  
         
     print(f"wins: {wins}, losses: {losses}, ties: {ties}")

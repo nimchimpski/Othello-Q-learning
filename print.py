@@ -4,15 +4,12 @@ from othello import *
 ####  AND LOADED IF EXISTS
 
 
-ai = train(100000, 0.1, 0.1, '6x6')
+# ai = train(10000, 0.4, 0.1)
 
-# print_q_table(ai.q)
+with open('qtables/qtable.pickle', 'rb') as f:
+    qtable = pickle.load(f)
 
-
-# with open('qtables/qtable.pickle', 'rb') as f:
-#     qtable = pickle.load(f)
-
-# print_q_table(qtable)
+print_q_table(qtable)
 # print(f'---len(ai.q)={len(ai.q)}')
 
 

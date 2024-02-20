@@ -712,6 +712,112 @@ def train(n):
     ####      RETURN THE TRAINED AI
     return ai
 
+def evaluate(n, testq, benchmarkq=None):
+    """
+    Evaluate the performance of `ai` against `benchmarkai` by playing `n` games.
+    """
+    
+       
+    testai = OthelloAI()
+    if testq:
+        testai.q = testai.load_data(testq)
+    benchmarkai = OthelloAI()
+    if benchmarkq:
+        benchmarkai.q = benchmarkai.load_data(benchmarkq)
+    benchmarkai.color = WHITE
+
+    # print(f'---testai.q={testai.q}')
+    # print(f"---benchmark.q={benchmarkai.q}")
+    # print(f'---tyoe of benchmarkai.q={type(benchmarkai.q)}')    
+
+    wins = 0
+    losses = 0
+    ties = 0
+
+    # print(f'---testai.q={testai.q}')
+    ####     CALC EVERY OTHER GAME
+    for i in range(n):
+        # every other game, switch starter:
+        if i % 2 == 0:
+            # print(f'---i= {i} is even')
+            testai.color = BLACK
+            benchmarkai.color = WHITE
+        else:
+            print(f'---i= {i} is odd')
+            testai.color = WHITE
+            benchmarkai.color = BLACK
+        # print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
+        # print(f"---testai.color={testai.printcolor}")
+        # print(f"---benchmarkai.color={benchmarkai.printcolor}")
+        game = Othello()
+
+        while not game.gameover(game.state):
+            # print(f"\n===MOVE----")
+            ####    FOR WHOEVER IS PLAYING, CHOOSE AN ACITON
+            if game.player == testai.color:
+                ####    MOVE IS FOR TESTAI
+                # print(f"\n===TESTAI TO MOVE as {testai.printcolor}")
+                # print(f'===board before move')
+                # game.printboard(game.state)
+                # print(f"===game.player= {game.playercolor}  ")
+                #### IF PLAYING AS WHITE, INVERT BOARD
+                aiboard = invertcheck(game.state, testai)
+                # print(f'---aiboard for getting action')
+                # game.printboard(aiboard)
+                action = testai.choose_q_action(aiboard, game, epsilon=False)
+           
+            else:
+                ####   MOVE IS BENCHMARKAI
+                # print(f"\n=== BENCHMARK TO MOVE as {benchmarkai.printcolor} ")
+                # print(f'===board before move')
+                # game.printboard(game.state)
+                # IF BENCHMARK IS WHITE, INVERT BOARD
+                aiboard = invertcheck(game.state, benchmarkai)
+                # print(f'---aiboard for getting action')
+                # game.printboard(aiboard)
+                action = benchmarkai.choose_q_action(aiboard, game, epsilon=False)
+             
+            ####    MAKE THE MOVE IF THERE IS ONE
+            # print(f"===action={action}")
+            if action is not None:
+                game.move(game.state, action[0], game.player)
+                # print(f"===game state after move")
+                # game.printboard(game.state, action[0])
+
+            ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVE
+            if game.gameover(game.state):
+                # print(f"===game over")
+                game.calc_winner(game.state)
+                # game.printboard(game.state)
+                # print(f"---game.winner= {game.winner}")
+                # print(f"---testai.color= {testai.color}")
+                if game.winner == testai.color:
+                    wins += 1
+                    # print(f"---END OF GAME {i+1}, \nTESTAI WINS. wins= {wins}||||||||||||\n")
+                elif game.winner == benchmarkai.color:
+                    losses += 1
+                    # print(f"---END OF GAME {i+1}. BENCHMARKAI WINS. \nlosses = {losses}||||||||||||\n")
+                elif game.winner == None:
+                    ties += 1
+                    # print(f"---END OF GAME {i+1} \nTIE. ties={ties}||||||||||||\n")
+                break
+            
+            game.player = game.switchplayer(game.player)
+        # print(f"---END OF GAME {i+1}")
+    
+    # win/loss ratio
+    if losses == 0:
+        winlossratio = 1
+    else:
+        winlossratio= wins/losses
+    winrate = wins / n  
+        
+    print(f"wins: {wins}, losses: {losses}, ties: {ties}")
+    print(f"win/loss ratio= {round(winlossratio, 2)}:1")
+    print(f"winrate= {winrate}")
+    ### print the q table used
+    print(f"testq= {testq} len={len(testai.q)}")
+
 
 if __name__ == "__main__":
         app.run(debug=True)

@@ -2,12 +2,17 @@ import math
 import random
 import time
 import pickle
+import os
 from copy import deepcopy
 
 EMPTY = 0
 BLACK = 1
 WHITE = -1
 VALID = '*'
+PLAYER_COLS = {
+    BLACK: "BLACK",
+    WHITE: "WHITE",
+}
 
 class Othello():
 
@@ -23,6 +28,10 @@ class Othello():
         self.player = BLACK
         self.winner = None
 
+    @property
+    def playercolor(self):
+        return "BLACK" if self.player == 1 else "WHITE"
+        
     # BOARD SHOWING AVAILABLE MOVES
     def boardwithavails(self, board,  human, aimove):  
         print(' ++++boardwithavails')

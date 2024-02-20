@@ -31,7 +31,7 @@ class Othello():
     @property
     def playercolor(self):
         return "BLACK" if self.player == 1 else "WHITE"
-        
+
     # BOARD SHOWING AVAILABLE MOVES
     def boardwithavails(self, board,  human, aimove):  
         print(' ++++boardwithavails')
@@ -625,9 +625,9 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
             # print(f"^^^ STATECOPY=")
             # game.printboard(copy_state)
 
-'''
-board perspective
-'''
+            '''
+            board perspective
+            '''
             #### FUNCTION FOR SINGLEPERSPECTIVE LEARING
             lookup_board = ai.chooseperspectivemove(copy_state, game.player)
 
@@ -679,15 +679,15 @@ board perspective
                     game.printboard(last[game.player]['state'])
                     
                     ai.update(
-                    last[game.player]["state"],
+                    last[game.player]["state"], # old state
                     last[game.player]["action"],
-                    game.state,
+                    new_state, # new state
                     1,
                     game)
                     ai.update(
                     last[opponent]["state"], 
                     last[opponent]["action"],
-                    game.state,
+                    new_state,
                     -1,
                     game
                     )
@@ -698,13 +698,13 @@ board perspective
                     ai.update(
                     last[game.player]["state"],
                     last[game.player]["action"],
-                    game.state,
+                    new_state,
                     -1,
                     game)
                     ai.update(
                     last[opponent]["state"], 
                     last[opponent]["action"], 
-                    game.state, 
+                    new_state, 
                     1, 
                     game)
 
@@ -716,7 +716,7 @@ board perspective
 
                     last[BLACK]["action"],
                     game.state, 
-                    0.1,
+                    0,
                     game)
                     ai.update(
                     last[WHITE]["state"],

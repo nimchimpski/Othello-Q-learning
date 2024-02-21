@@ -28,25 +28,24 @@ class Othello():
         self.player = BLACK
         self.winner = None
 
-    @classmethod
-    def playercolor(self, player):
-
-        return "BLACK" if player == 1 else "WHITE"
+    @property
+    def playercolor(self):
+        return "BLACK" if self.player == 1 else "WHITE"
 
     # BOARD SHOWING AVAILABLE MOVES
     def boardwithavails(self, board,  human, aimove):  
-        print(' ++++boardwithavails')
+        # print(' ++++boardwithavails')
     
         # print(f'player={player}')
         for cell in self.available_actions( board, human):
-            print(f'cell={cell}')
+            # print(f'cell={cell}')
             board[cell[0]][cell[1]] = '*'
         # add ai's last move
         if aimove is not None:
             # print(f'---human= {human}')
-            if human == 1:
+            if human == BLACK:
                 board[aimove[0]][aimove[1]] = '-'
-            elif human == -1:
+            elif human == WHITE:
                 board[aimove[0]][aimove[1]] = '+'
         # print(f"for response board= {board}")
         # self.printboard(board)
@@ -74,7 +73,7 @@ class Othello():
                 else:
                     row_str += f' {symbol_map[cell]} '
             print(row_str)
-
+    
     def create_board(self):
         # print('+++create_board')
         board = []
@@ -93,17 +92,14 @@ class Othello():
     def move(self, board, action, player):
         """
         `action` must be a tuple `(i,j)`.
-        return the updated board.
-        !!! CHANGES BOARD VAR !!!
+        return the updated board
         """
-        copyboard = deepcopy(board)
-        # print(f'\n++++move() for {player}, ')
+        # print(f'++++move() for {player}, ')
         # self.printboard(board)
-        # print(f'action={action}')
         # print(f'player={player}')
         if board is None:
             print("Board is None")
-        availactions = self.available_actions(copyboard, player)
+        availactions = self.available_actions(board, player)
         # print(f'availactions={availactions}')
         # print(f'---action= {action}')
      
@@ -123,18 +119,18 @@ class Othello():
         ####  MARK BOARD WITH FLIPPED PIECES
         if bitstoflip:
             for bit in bitstoflip:
-                copyboard[bit[0]][bit[1]] = player
+                board[bit[0]][bit[1]] = player
         # print(f'board with just  flips')
         
           #####     MARK BOARD WITH ACTUAL MOVE
-        copyboard[action[0]][action[1]] = player
+        board[action[0]][action[1]] = player
         # print(f'board with flips and move')
         # self.printboard(board)
 
       
         # print('END OF MOVE()')
 
-        return copyboard
+        return board
 
     def calcnextcell(self, board, cell, direction):
             #   RETURNS THE NEXT CELL ONLY IF IT IS WITHIN BOUNDS
@@ -212,8 +208,6 @@ class Othello():
                 captured.add(cell)
                 # print(f'captured={captured}')
 
-        
-          
     def available_actions(self, board, player):
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
@@ -314,19 +308,19 @@ class Othello():
             return True
 
         ####   CHECK IF NEITHER PLAYER HAS ANY VALID MOVES
-        if (not self.available_actions(  board, -1) and not self.available_actions(board, 1)):
+        if (not self.available_actions(  board, WHITE) and not self.available_actions(board, BLACK)):
             # print(f'---no valid moves for either player')
             # print(f'----end of gameover()')
             return True
         # print(f'----end of gameover()')
         return False
         
-    
+       
 
 class OthelloAI():
     ### AI CAN USE CLASS ATTRIBUTES AS IT WILL NOT BE SERVED/SUBJECT TO REQUESTS
 
-    def __init__(self, alpha=0.5, epsilon=0.1):
+    def __init__(self, alpha=0.3, epsilon=0.1):
         """
         Initialize AI with an empty Q-learning dictionary,
         an alpha (learning) rate, and an epsilon rate.
@@ -339,22 +333,30 @@ class OthelloAI():
         self.q = dict() # VALUE CAN BE NONE FOR UNEXPLORED STATES
         self.alpha = alpha
         self.epsilon = epsilon
+        self.color = BLACK
 
-    def update(self, old_state, action, new_state, reward, game_instance, player=None):
+    def __str__(self):
+        return f"Q-AI={self.alpha}, epsilon={self.epsilon}"
+
+    @property
+    def printcolor(self):
+        return "BLACK" if self.color == 1 else "WHITE"
+
+    def update(self, old_state, action, new_state, reward, game_instance):
         """
         Update Q-learning model, given an old state, an action taken
         in that state, a new resulting state, and the reward received
         from taking that action.
         """
-    
+        player = game_instance.player
         # print(f"+++update")
         # print(f"---old_state={old_state}, action={action}, new_state={new_state}, reward={reward}")
-        old = self.get_q_value(player, old_state, action)
+        old = self.get_q_value( old_state, action)
         best_future = self.best_future_reward(new_state, game_instance)
-        self.update_q_value(player, old_state, action, old, reward, best_future)
+        self.update_q_value( old_state, action, old, reward, best_future)
         # print(f"+++>>>update: self.q={self.q}")
 
-    def get_q_value(self, player, state, action):
+    def get_q_value(self, state, action):
         """
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
@@ -368,7 +370,7 @@ class OthelloAI():
         # print(f"---state type= {type(statetuple)}")
 
         
-        q =  self.q.get((player, statetuple, action), 0)
+        q =  self.q.get(( statetuple, action), 0)
         # print(f"+++>>>get_q_value: {state}, {action} = q {q}")
         if not q:
             return None
@@ -377,7 +379,7 @@ class OthelloAI():
     def statetotuple(self, state):
         return tuple(tuple(row) for row in state)
 
-    def update_q_value(self, player, state, action, old_q, reward, future_rewards):
+    def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
         Update the Q-value for the state `state` and the action `action`
         given the previous Q-value `old_q`, a current reward `reward`,
@@ -410,10 +412,8 @@ class OthelloAI():
 
         result = old_q + (self.alpha * (newvalest - old_q))
         result = round(result, 2)
-        
-        
-        
-        self.q[player, statetuple, action] = result
+        # print(f"---result={result}")
+        self.q[statetuple, action] = result
         # print(f"---updateq self.q = {self.q[statetuple, action]}")
         
     def best_future_reward(self, state, game_instance):
@@ -439,7 +439,7 @@ class OthelloAI():
         for action in actions:
             # print(f"---action={action}")
             # print(f"---q = {self.get_q_value(state, action)})")
-            n = self.get_q_value(game_instance.player, state, action)
+            n = self.get_q_value(state, action)
             if n is None:
                 n = 0
             qlist.append(n)
@@ -457,7 +457,7 @@ class OthelloAI():
 
         # get max of the q values
 
-    def choose_q_action(self, state, player, game_instance, epsilon=True):
+    def choose_q_action(self, state, game_instance, epsilon=True):
         """
         Given a state `state`, return an action `(i, j)` to take.
 
@@ -486,12 +486,16 @@ class OthelloAI():
                     cell = -1
         # print(f"---state after={state}")
 
-        actions = game_instance.available_actions(state, player)
-        # print(f"---actions={actions}")
+        ####    GET AVAILABLE ACTIONS
+
+        actions = game_instance.available_actions(state, BLACK)
+        # print(f"---availactions={actions}")
         if not actions:
             return None
         action = None
+
         ####  IF ONLY ONE ACTION RETURN IT
+
         if len(actions) == 1:
             # print(f"---only one action, so returning it")
             key = next(iter(actions))
@@ -523,7 +527,7 @@ class OthelloAI():
             for action in actions:
                 assert action is not None
                 # print(f"---action={action}")
-                q = self.get_q_value(player, state, action)
+                q = self.get_q_value(state, action)
                 # print(f"---q={q}")
 
                 ###    UNSEARCHED STATES/ACTIONS GET AWARDED 0 TODO: ???
@@ -548,48 +552,56 @@ class OthelloAI():
         # print(f'+--end of choose_q_action()')
         return action, captured
     
-    def evaluateboard(self):
+    def evaluateboard(self,captures):
         """
         Returns a number representing the value of the current game state to the player.
         """
         # print(f'+++evaluateboard()')
-        return None
+        if captures == 0:
+            return 0
+
+        result = 1 - 1 / (captures + 1)
+        # print(f'---result={result}')
+        result = result * .5
+        # print(f'---result={result}')
+        # print(f'---captures based evaluation={result}')
+        return result
     
     def save_data(self, filename):
         with open(f'{filename}.pickle', 'wb') as f:
             # print(f"+++saving qtable: {self.q}")
             pickle.dump(self.q, f)
-
-    def load_data(self, filename ):
-        with open('qtable.pickle', 'rb') as f:
+    
+    @staticmethod
+    def load_data(filename ):
+        with open(f'{filename}.pickle', 'rb') as f:
             q = pickle.load(f)
             return q
-
-
-def print_q_table(q_table):
-    for key, value in q_table.items():
-        player, state, action = key  # Unpack the key
-        # Convert state to a readable format
-        state_str = '\n'.join(' '.join('X' if cell == 1 else 'O' if cell == -1 else '.' for cell in row) for row in state)
+    
+    @staticmethod
+    def invertboard(board):
+        # print(f'+++invertboard')   
+        # Othello().printboard(board)
         
-        # Determine player's color for printing
-        player_str = 'BLACK' if player == 1 else 'WHITE'
-        
-        # Format and print the information
-        print(f"Player: {player_str}")
-        print(f"State:\n{state_str}")
-        print(f"Action: {action}")
-        print(f"Q-value: {value}")
-        print("-" * 40)  # Separator for readability
+        board = [[-cell for cell in row] for row in board]
+        # print()
+        # Othello().printboard(board)      
+        return board
 
-
-
+    def choosperspectivemove(self, board, player, singleperspective=False):
+        # print(f'+++singleperspectivemove')
+        # print(f'player={player}')
+        if singleperspective:
+            if player == WHITE:
+                return self.invertboard(board)
+        else:
+            return board
+       
 def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
     """
     Train an AI by playing `n` games against itself.
     """
     ai = OthelloAI(alpha, epsilon)
-    print(f'^^^filename= {filename}')
 
     def simulated_annealing_epsilon(initial_epsilon, current_iteration, total_iterations, min_epsilon=0.01, decay_rate=2):
         """
@@ -608,9 +620,8 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
         return epsilon
 
     filepath = os.path.join(f'qtables', filename)
-    print(f'---filepath={filepath}')
     ####  IF FILE IS QTABLE IT WILL BE OVERWRITTEN
-    if filename != 'testing':
+    if filename != 'qtable':
         # print(f"---filepath={filepath}")
         ####     IF THE  FILE EXOSTS IN QTABLES...
         if os.path.exists(f'{filepath}.pickle'):
@@ -624,7 +635,7 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
     ####      PLAY N GAMES
     for i in range(n):
 
-        # print(f'---i= {i}, n= {n}, self.epsilon={ai.epsilon}')
+        print(f'---i= {i}, n= {n}, self.epsilon={ai.epsilon}')
         ai.epsilon = simulated_annealing_epsilon(1, i, n)
         
         # print(f"Playing training game {i + 1}")
@@ -646,14 +657,24 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
             # print(f"^^^opponent = {opponent}")
 
             ####      KEEP TRACK OF CURRENT STATE AND ACTION
-            # copy_state = deepcopy(game.state)
+            copy_state = deepcopy(game.state)
             # print(f"^^^GAME.STATE=")
             # game.printboard(game.state)
             # print(f"^^^ STATECOPY=")
             # game.printboard(copy_state)
 
+'''
+board perspective
+'''
+            #### FUNCTION FOR SINGLEPERSPECTIVE LEARING
+            lookup_board = ai.chooseperspectivemove(copy_state, game.player)
+
+            ####  FUNCTION FOR NORMAL PERSPECTIVE LEARNING
+
+
+       
             ####      CHOOSE ACTION FROM Q TABLE
-            actions = ai.choose_q_action(game.state, game.player, game)
+            actions = ai.choose_q_action(lookup_board, game)
             if  actions is None:
                 # print(f"---no actions")
                 game.player = game.switchplayer(game.player)
@@ -667,39 +688,47 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
             last[game.player]["action"] = action
 
             ####      MAKE MOVE
-            new_state = game.move(game.state, action, game.player)
+            new_state = game.move(copy_state, action, game.player)
             # print(f"/^^^AFTER MOVEfor player {game.player}")
             # game.printboard(copy_state)
 
+            ####     EVALUATE copy STATE - IF GAME NOT OVER
+            # number of captures?
+            if not game.gameover(copy_state):
+                captures = len(actions[1])
+                # print(f"^^^captures={captures}")
+                evaluation = ai.evaluateboard(captures)
+                # print(f"^^^evaluation={evaluation}")
 
-            ####      1 CHECK FOR GAME OVER, UPDATE Q VALUES WITH REWARDS
-            if game.gameover(new_state):
-                print(f"^^^game over")
-                game.winner = game.calc_winner(new_state)
+                ####     UPADTE Q VALUES
+                # print(f"^^^update q values : lookup_board=:")
+                # game.printboard(lookup_board)
+                ai.update(lookup_board, action, new_state, evaluation, game)
+
+            ####      WHEN GAME IS OVER, UPDATE Q VALUES WITH REWARDS
+            if game.gameover(copy_state):
+                # print(f"^^^game over")
+                game.winner = game.calc_winner(copy_state)
            
                 ####     PLAYER WON
                 if game.player == game.winner:
-                    # print(f"^^^winning move for {game.playercolor(game.player)}={last[game.player]['action']}")
+                    print(f"^^^last[game.player]={last[game.player]}")
                     # print(f"^^^last[game.player]={last[game.player]}")
-                    # game.printboard(last[game.player]['state'])
+                    game.printboard(last[game.player]['state'])
                     
                     ai.update(
-                    last[game.player]["state"], # old state
+                    last[game.player]["state"],
                     last[game.player]["action"],
-                    new_state, # new state
+                    game.state,
                     1,
-                    game,
-                    game.player)
-
+                    game)
                     ai.update(
                     last[opponent]["state"], 
                     last[opponent]["action"],
-                    new_state,
+                    game.state,
                     -1,
-                    game,
-                    opponent
+                    game
                     )
-
                 #####     PLAYER LOST
                 elif game.winner is not game.player:
                     assert game.winner != game.player
@@ -707,17 +736,15 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
                     ai.update(
                     last[game.player]["state"],
                     last[game.player]["action"],
-                    new_state,
+                    game.state,
                     -1,
-                    game,
-                    game.player)
+                    game)
                     ai.update(
                     last[opponent]["state"], 
                     last[opponent]["action"], 
-                    new_state, 
+                    game.state, 
                     1, 
-                    game,
-                    opponent)
+                    game)
 
                 ####     IT WAS A TIE
                 else:
@@ -727,26 +754,38 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
 
                     last[BLACK]["action"],
                     game.state, 
-                    0,
-                    game,
-                    game.player)
+                    0.1,
+                    game)
                     ai.update(
                     last[WHITE]["state"],
                     last[WHITE]["action"],
                     game.state,
                     0,
-                    game,
-                    opponent)
+                    game)
 
                     #### UPDATE DOES NOT NEED PLAYER ARG !!!!!
 
                 break
 
-      
-            ####      2 IF GAME NOT OVER, UPDATE Q VALUES WITH REWARDS
+            ####      IF GAME IS CONTINUING, NO REWARDS YET
+            
+            # elif last[game.player]["state"] is not None:
+
+                # CHECK COLOR OF PLAYER
+                # if game.player == WHITE:
+
+
+                # ai.update(
+                #     last[game.player]["state"],
+                #     last[game.player]["action"],
+                #     game.state,
+                #     0,
+                #     game
+                # ) # FN GETS PLAYER FROM GAME INSTANCE!!!!!!!
+            # print(f"^^^q table at end of move = {ai.q}")   
 
             ####      SAVE THE NEW STATE
-            game.state = new_state
+            game.state = copy_state
 
             ####      SWITCH PLAYERS . 
             # print(f"^^^switch player")
@@ -768,7 +807,15 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
     ####      RETURN THE TRAINED AI
     return ai
 
-
+def print_q_table(q_table):
+    for state_action, q_value in q_table.items():
+        state, action = state_action
+        # Convert state tuples to a more readable format
+        state_str = '\n'.join(' '.join("X" if cell == 1 else "0" if cell == -1 else "." for cell in row) for row in state)
+        print(f"State:\n{state_str}")
+        print(f"Action: {action}")
+        print(f"Q-value: {q_value:.2f}")
+        print("-" * 40)  # Separator for readability
 
 def evaluate(n, testq, benchmarkq=None):
     """
@@ -777,8 +824,8 @@ def evaluate(n, testq, benchmarkq=None):
     
        
     testai = OthelloAI()
-    
-    testai.q = testai.load_data(testq)
+    if testq:
+        testai.q = testai.load_data(testq)
     benchmarkai = OthelloAI()
     if benchmarkq:
         benchmarkai.q = benchmarkai.load_data(benchmarkq)
@@ -792,73 +839,92 @@ def evaluate(n, testq, benchmarkq=None):
     losses = 0
     ties = 0
 
+    def invertcheck(board, player):
+            if player.color == WHITE:
+                # print(f'---ais color = white so invert board')
+                return OthelloAI.invertboard(board)
+            else:
+                return board
+
     # print(f'---testai.q={testai.q}')
     ####     CALC EVERY OTHER GAME
     for i in range(n):
-        game = Othello()
         # every other game, switch starter:
         if i % 2 == 0:
-            print(f'---i= {i} is even')
+            # print(f'---i= {i} is even')
             testai.color = BLACK
             benchmarkai.color = WHITE
         else:
             print(f'---i= {i} is odd')
             testai.color = WHITE
             benchmarkai.color = BLACK
-        print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
+        # print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
         # print(f"---testai.color={testai.printcolor}")
         # print(f"---benchmarkai.color={benchmarkai.printcolor}")
+        game = Othello()
+
         
-
+ 
         while not game.gameover(game.state):
-            print(f"\n===MOVE----")
-
-            print(f'===board before move')
-            game.printboard(game.state)
+            # print(f"\n===MOVE----")
+            
 
             ####    FOR WHOEVER IS PLAYING, CHOOSE AN ACITON
             if game.player == testai.color:
                 ####    MOVE IS FOR TESTAI
-                print(f"\n===TESTAI TO MOVE as {game.playercolor(testai.color)}")
+                # print(f"\n===TESTAI TO MOVE as {testai.printcolor}")
+                # print(f'===board before move')
+                # game.printboard(game.state)
                 # print(f"===game.player= {game.playercolor}  ")
-                
-                action = testai.choose_q_action(game.state, game.player, game, epsilon=False)
+                #### IF PLAYING AS WHITE, INVERT BOARD
+                aiboard = invertcheck(game.state, testai)
+                # print(f'---aiboard for getting action')
+                # game.printboard(aiboard)
+                action = testai.choose_q_action(aiboard, game, epsilon=False)
            
             else:
                 ####   MOVE IS BENCHMARKAI
-                print(f"\n=== BENCHMARK TO MOVE as {game.playercolor(benchmarkai.color)} ")
-               
-         
-                action = benchmarkai.choose_q_action(game.state, game.player, game, epsilon=False)
-             
-            ####    MAKE THE MOVE IF THERE IS ONE
-            print(f"===action={action}")
-            if action is not None:
-                newboard = game.move(game.state, action[0], game.player)
-                print(f"===game state after move")
-                game.printboard(newboard, action[0])
-                game.state = newboard
+                # print(f"\n=== BENCHMARK TO MOVE as {benchmarkai.printcolor} ")
+                # print(f'===board before move')
+                # game.printboard(game.state)
+                # IF BENCHMARK IS WHITE, INVERT BOARD
+                aiboard = invertcheck(game.state, benchmarkai)
+                # print(f'---aiboard for getting action')
+                # game.printboard(aiboard)
 
-            ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVE
-            if game.gameover(newboard):
-                print(f"===game over")
-                game.calc_winner(newboard)
-                game.printboard(newboard)
-                print(f"---game.winner= {game.winner}")
-                print(f"---testai.color= {testai.color}")
+                action = benchmarkai.choose_q_action(aiboard, game, epsilon=False)
+             
+            
+
+            ####    MAKE THE MOVE IF THERE IS ONE
+            # print(f"===action={action}")
+            if action is not None:
+                game.move(game.state, action[0], game.player)
+                # print(f"===game state after move")
+                # game.printboard(game.state, action[0])
+
+            ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVVE
+            if game.gameover(game.state):
+                # print(f"===game over")
+                game.calc_winner(game.state)
+                # game.printboard(game.state)
+                # print(f"---game.winner= {game.winner}")
+                # print(f"---testai.color= {testai.color}")
                 if game.winner == testai.color:
                     wins += 1
-                    print(f"---END OF GAME {i+1}, \nTESTAI WINS. wins= {wins}||||||||||||\n")
+                    # print(f"---END OF GAME {i+1}, \nTESTAI WINS. wins= {wins}||||||||||||\n")
                 elif game.winner == benchmarkai.color:
                     losses += 1
-                    print(f"---END OF GAME {i+1}. BENCHMARKAI WINS. \nlosses = {losses}||||||||||||\n")
+                    # print(f"---END OF GAME {i+1}. BENCHMARKAI WINS. \nlosses = {losses}||||||||||||\n")
                 elif game.winner == None:
                     ties += 1
-                    print(f"---END OF GAME {i+1} \nTIE. ties={ties}||||||||||||\n")
+                    # print(f"---END OF GAME {i+1} \nTIE. ties={ties}||||||||||||\n")
+                    
                 break
             
+
             game.player = game.switchplayer(game.player)
-        print(f"---END OF GAME {i+1}")
+        # print(f"---END OF GAME {i+1}")
     
     # win/loss ratio
     if losses == 0:
@@ -872,6 +938,7 @@ def evaluate(n, testq, benchmarkq=None):
     print(f"winrate= {winrate}")
     ### print the q table used
     print(f"testq= {testq} len={len(testai.q)}")
+
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from othello import *
 
-ai = train(10000, filename= '6x6c')
+ai = train(1, filename= 'testing')
 # print_q_table(ai.q)
 # SAVE THE MODEL
 # ai.save_data('qtable')  

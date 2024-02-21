@@ -16,7 +16,7 @@ PLAYER_COLS = {
 
 class Othello():
 
-    def __init__(self, size=6):
+    def __init__(self, size=4):
         """
         Initialize game board.
         Each game board has
@@ -386,14 +386,15 @@ class OthelloAI():
         Use the formula:
 
         Q(s, a) <- old value estimate + alpha * (new value estimate - old value estimate)
+
         Q(state, action) = Q(state, action) + α * (reward + γ * max_a Q(next_state, a) - Q(state, action))
 
 
         where `old value estimate` is the previous Q-value,
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
-        """
-        # print(f"+++UPDATEQ FOR PLAYER {player}")
+        # """
+        print(f"+++UPDATEQ FOR {Othello.playercolor(player)}")
         # print(f"---state={state}, action={action}, old_q={old_q}, reward={reward}, future_rewards={future_rewards}")
         if state is None or action is None:
             print(f"---!!!!!state or action is None")
@@ -414,7 +415,7 @@ class OthelloAI():
         
         
         self.q[player, statetuple, action] = result
-        # print(f"---updateq self.q = {self.q[statetuple, action]}")
+        print(f"---updateq self.q = {self.q[player, statetuple, action]}")
         
     def best_future_reward(self, state, game_instance):
         """
@@ -505,9 +506,8 @@ class OthelloAI():
             x = random.random()
             # print(f"---random x = {x}")
             if x < self.epsilon:
-                # print(f"---x < epsilon, so chooseing random action")
                 action = random.choice(list(actions))
-                # print(f">>>EPs=True : random action= {action}")
+                print(f">>>EPs=True : random action= {action}")
             # else:
                 # print(f'---a random action was not chosen, so use the q table to choose the best action')
         ### EPSILON FALSE: CHOOSE ACTION WITH HIGHEST Q VALUE
@@ -548,20 +548,49 @@ class OthelloAI():
         # print(f'+--end of choose_q_action()')
         return action, captured
     
-    def evaluateboard(self):
-        """
-        Returns a number representing the value of the current game state to the player.
-        """
+    def choose_evaluation_action(self, state, player, game_instance):
+        print(f"+++choose_evaluation_action()")
+        actions = game_instance.available_actions(state, player)
+        print(f"---actions={actions}")
+        besteval = -float('inf')
+        for action in actions:
+            eval = self.evaluateboard(state, action)
+            if eval > besteval:
+                besteval = eval
+                bestaction = action
+            print(f"---action={action}, besteval={besteval}")
+        print(f"---bestaction={bestaction}")
+        return bestaction
+        
+
+    
+    def evaluateboard(self, state, action, player):
+        print(f'+++evaluateboard()')
+        # calculate if corners belong to player
+        # calculate if edges belong to player
+        # calculate if player has more available moves than opponent
+        val = 0
+        if action in [(0,0), (0,3), (3,0), (3,3)]:
+            val += 1
+        # normalize val = divide by max val possible
+        # val = val / 4
+        print(f"---return val after corners={val}")
+        return val
+
+
+
+        
         # print(f'+++evaluateboard()')
         return None
     
     def save_data(self, filename):
-        with open(f'{filename}.pickle', 'wb') as f:
+        with open(f'qtables/{filename}.pickle', 'wb') as f:
             # print(f"+++saving qtable: {self.q}")
             pickle.dump(self.q, f)
 
+    @classmethod
     def load_data(self, filename ):
-        with open('qtable.pickle', 'rb') as f:
+        with open(f'qtables/{filename}.pickle', 'rb') as f:
             q = pickle.load(f)
             return q
 
@@ -584,12 +613,12 @@ def print_q_table(q_table):
 
 
 
-def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
+def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
     """
     Train an AI by playing `n` games against itself.
     """
     ai = OthelloAI(alpha, epsilon)
-    print(f'^^^filename= {filename}')
+    print(f'...filename= {filename}')
 
     def simulated_annealing_epsilon(initial_epsilon, current_iteration, total_iterations, min_epsilon=0.01, decay_rate=2):
         """
@@ -607,17 +636,13 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
         epsilon = max(min_epsilon, initial_epsilon * math.exp(-decay_rate * fraction))
         return epsilon
 
-    filepath = os.path.join(f'qtables', filename)
-    print(f'---filepath={filepath}')
-    ####  IF FILE IS QTABLE IT WILL BE OVERWRITTEN
+    # if file isnt 'testing', check if it exists
     if filename != 'testing':
-        # print(f"---filepath={filepath}")
-        ####     IF THE  FILE EXOSTS IN QTABLES...
-        if os.path.exists(f'{filepath}.pickle'):
-            print(f"Loading qtable from {filepath}")
+        if os.path.exists(f'qtables/{filename}.pickle'):
+            print(f"Loading qtable from {filename}")
             #### LOAD IT
-            ai.q = ai.load_data(filepath)
-    
+            ai.q = ai.load_data(filename)
+
 
     # ai0wins = 0
     completed = 0
@@ -625,32 +650,24 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
     for i in range(n):
 
         # print(f'---i= {i}, n= {n}, self.epsilon={ai.epsilon}')
-        ai.epsilon = simulated_annealing_epsilon(1, i, n)
+        # ai.epsilon = simulated_annealing_epsilon(1, i, n)
         
-        # print(f"Playing training game {i + 1}")
+        print(f"Playing training game {i + 1}")
         game = Othello()
-        # print(f"^^^q dict={ai.q}")
+        # print(f"...q dict={ai.q}")
 
         ####      Keep track of last move made by either player
         last = {
             BLACK: {"state": None, "action": None},
             WHITE: {"state": None, "action": None}
         }
-        # print(f"^^^last={last}")
+        # print(f"...last={last}")
         moves = 0
         ####      GAME LOOP PLAYS 1 GAME
         while True:
+            print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
             moves += 1
-            # print(f"\n^^^player = {game.playercolor}")
             opponent = game.switchplayer(game.player)
-            # print(f"^^^opponent = {opponent}")
-
-            ####      KEEP TRACK OF CURRENT STATE AND ACTION
-            # copy_state = deepcopy(game.state)
-            # print(f"^^^GAME.STATE=")
-            # game.printboard(game.state)
-            # print(f"^^^ STATECOPY=")
-            # game.printboard(copy_state)
 
             ####      CHOOSE ACTION FROM Q TABLE
             actions = ai.choose_q_action(game.state, game.player, game)
@@ -660,7 +677,7 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
                 continue
 
             action = actions[0]
-            # print(f"^^^ q action just chosen ={actions[0]} ")
+            print(f"... q action just chosen ={actions[0]} ")
             
             ####      KEEP TRACK OF LAST STATE (BEFORE MOVE) AND ACTION
             last[game.player]["state"] = game.state
@@ -668,102 +685,71 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
 
             ####      MAKE MOVE
             new_state = game.move(game.state, action, game.player)
-            # print(f"/^^^AFTER MOVEfor player {game.player}")
-            # game.printboard(copy_state)
-
+            # print(f"/...AFTER MOVEfor player {game.player}")
+            game.printboard(new_state)
 
             ####      1 CHECK FOR GAME OVER, UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
-                print(f"^^^game over")
+                # print(f"...game over")
                 game.winner = game.calc_winner(new_state)
            
                 ####     PLAYER WON
                 if game.player == game.winner:
-                    # print(f"^^^winning move for {game.playercolor(game.player)}={last[game.player]['action']}")
-                    # print(f"^^^last[game.player]={last[game.player]}")
+                    # print(f"...winning move for {game.playercolor(game.player)}={last[game.player]['action']}")
+                    # print(f"...last[game.player]={last[game.player]}")
                     # game.printboard(last[game.player]['state'])
                     
-                    ai.update(
-                    last[game.player]["state"], # old state
-                    last[game.player]["action"],
-                    new_state, # new state
-                    1,
-                    game,
-                    game.player)
+                    ai.update( last[game.player]["state"],  last[game.player]["action"], new_state,  1, game, game.player)
 
-                    ai.update(
-                    last[opponent]["state"], 
-                    last[opponent]["action"],
-                    new_state,
-                    -1,
-                    game,
-                    opponent
-                    )
+                    ai.update( last[opponent]["state"],  last[opponent]["action"], new_state, -1, game, opponent )
 
                 #####     PLAYER LOST
                 elif game.winner is not game.player:
                     assert game.winner != game.player
-                    # print(f"^^^last[game.player]={last[game.player]}")
-                    ai.update(
-                    last[game.player]["state"],
-                    last[game.player]["action"],
-                    new_state,
-                    -1,
-                    game,
-                    game.player)
-                    ai.update(
-                    last[opponent]["state"], 
-                    last[opponent]["action"], 
-                    new_state, 
-                    1, 
-                    game,
-                    opponent)
+                    # print(f"...last[game.player]={last[game.player]}")
+                    ai.update( last[game.player]["state"], last[game.player]["action"], new_state, -1, game, game.player)
+
+                    ai.update( last[opponent]["state"],  last[opponent]["action"],  new_state,  1,  game, opponent)
 
                 ####     IT WAS A TIE
                 else:
                     assert game.winner == None
-                    ai.update(
-                    last[BLACK]["state"],
-
-                    last[BLACK]["action"],
-                    game.state, 
-                    0,
-                    game,
-                    game.player)
-                    ai.update(
-                    last[WHITE]["state"],
-                    last[WHITE]["action"],
-                    game.state,
-                    0,
-                    game,
-                    opponent)
+                    ai.update(last[BLACK]["state"], last[BLACK]["action"], game.state,  0, game, game.player) 
+                    ai.update( last[WHITE]["state"], last[WHITE]["action"], game.state, 0, game, opponent)
 
                     #### UPDATE DOES NOT NEED PLAYER ARG !!!!!
 
                 break
 
-      
             ####      2 IF GAME NOT OVER, UPDATE Q VALUES WITH REWARDS
+
+            ####  EVALUATE BOARD
+            print(f"---evaluate board")
+            evaluation = ai.evaluateboard(new_state, last[game.player]['action'], game.player)
+            print(f"---evaluation={evaluation}")
+            ai.update(game.state, action, new_state, evaluation, game, game.player)
+
+
 
             ####      SAVE THE NEW STATE
             game.state = new_state
 
             ####      SWITCH PLAYERS . 
-            # print(f"^^^switch player")
+            # print(f"...switch player")
             game.player = game.switchplayer( game.player)
-            # print(f"^^^player after switching={game.player}\n")
+            # print(f"...player after switching={game.player}\n")
             # if moves == 100:
             #     break
 
         completed += 1
         if completed % 100 == 0:
             print(f"played games = {completed}")
-        # print(f"^^^q table at end of game = {ai.q}")
+        # print(f"...q table at end of game = {ai.q}")
     print(f"Done training {completed} games, saved as {filename}.pickle q")
     print(f'--length of qtable = {len(ai.q)}')
-    # print(f"^^^q table = {ai.q}")
+    # print(f"...q table = {ai.q}")
 
-    ai.save_data(filepath)
+    ai.save_data(filename)
 
     ####      RETURN THE TRAINED AI
     return ai

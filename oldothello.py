@@ -663,9 +663,9 @@ def train(n, alpha=0.5, epsilon=0.1, filename='qtable'):
             # print(f"^^^ STATECOPY=")
             # game.printboard(copy_state)
 
-'''
-board perspective
-'''
+            '''
+            board perspective
+            '''
             #### FUNCTION FOR SINGLEPERSPECTIVE LEARING
             lookup_board = ai.chooseperspectivemove(copy_state, game.player)
 

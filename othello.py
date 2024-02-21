@@ -16,7 +16,7 @@ PLAYER_COLS = {
 
 class Othello():
 
-    def __init__(self, size=4):
+    def __init__(self, size=6):
         """
         Initialize game board.
         Each game board has
@@ -394,10 +394,10 @@ class OthelloAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         # """
-        print(f"+++UPDATEQ FOR {Othello.playercolor(player)}")
+      # print(f"+++UPDATEQ FOR {Othello.playercolor(player)}")
         # print(f"---state={state}, action={action}, old_q={old_q}, reward={reward}, future_rewards={future_rewards}")
         if state is None or action is None:
-            print(f"---!!!!!state or action is None")
+          # print(f"---!!!!!state or action is None")
             return
 
         if old_q is None:
@@ -415,7 +415,7 @@ class OthelloAI():
         
         
         self.q[player, statetuple, action] = result
-        print(f"---updateq self.q = {self.q[player, statetuple, action]}")
+      # print(f"---updateq self.q = {self.q[player, statetuple, action]}")
         
     def best_future_reward(self, state, game_instance):
         """
@@ -507,7 +507,7 @@ class OthelloAI():
             # print(f"---random x = {x}")
             if x < self.epsilon:
                 action = random.choice(list(actions))
-                print(f">>>EPs=True : random action= {action}")
+                # print(f">>>EPs=True : random action= {action}")
             # else:
                 # print(f'---a random action was not chosen, so use the q table to choose the best action')
         ### EPSILON FALSE: CHOOSE ACTION WITH HIGHEST Q VALUE
@@ -565,23 +565,23 @@ class OthelloAI():
 
     
     def evaluateboard(self, state, action, player):
-        print(f'+++evaluateboard()')
+        # print(f'+++evaluateboard()')
         # calculate if corners belong to player
         # calculate if edges belong to player
         # calculate if player has more available moves than opponent
         val = 0
-        if action in [(0,0), (0,3), (3,0), (3,3)]:
-            val += 1
+        l = len(state)-1
+        if action in [(0,0), (0,l), (l,0), (l,l)]:
+            # print(f"---corner action={action}")
+            val = 0.5
         # normalize val = divide by max val possible
         # val = val / 4
-        print(f"---return val after corners={val}")
+        # print(f"---return val after corners={val}")
         return val
 
 
 
-        
-        # print(f'+++evaluateboard()')
-        return None
+     
     
     def save_data(self, filename):
         with open(f'qtables/{filename}.pickle', 'wb') as f:
@@ -613,33 +613,23 @@ def print_q_table(q_table):
 
 
 
-def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
+def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
     """
     Train an AI by playing `n` games against itself.
     """
     ai = OthelloAI(alpha, epsilon)
-    print(f'...filename= {filename}')
+  # print(f'...filename= {filename}')
 
-    def simulated_annealing_epsilon(initial_epsilon, current_iteration, total_iterations, min_epsilon=0.01, decay_rate=2):
-        """
-        Adjust epsilon using a simulated annealing schedule to decrease over time.
-
-        :param initial_epsilon: Initial value of epsilon for exploration.
-        :param current_iteration: The current iteration number (starting from 0).
-        :param total_iterations: The total number of iterations planned.
-        :param min_epsilon: The minimum value that epsilon can take to ensure some exploration.
-        :param decay_rate: The rate at which epsilon decays over time.
-        :return: The adjusted value of epsilon.
-        """
+    def simulated_annealing_epsilon(initial_epsilon, iteration, total_iterations, min_epsilon=0.01):
+        
         # Ensure the fraction decreases from 1 towards 0 over iterations
-        fraction = current_iteration / total_iterations
-        epsilon = max(min_epsilon, initial_epsilon * math.exp(-decay_rate * fraction))
+        epsilon = max(min_epsilon, initial_epsilon - (i / (total_iterations - 1)) * (initial_epsilon - min_epsilon))
         return epsilon
 
     # if file isnt 'testing', check if it exists
     if filename != 'testing':
         if os.path.exists(f'qtables/{filename}.pickle'):
-            print(f"Loading qtable from {filename}")
+          # print(f"Loading qtable from {filename}")
             #### LOAD IT
             ai.q = ai.load_data(filename)
 
@@ -650,9 +640,10 @@ def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
     for i in range(n):
 
         # print(f'---i= {i}, n= {n}, self.epsilon={ai.epsilon}')
-        # ai.epsilon = simulated_annealing_epsilon(1, i, n)
+        eps = simulated_annealing_epsilon(1, i, n)
+        print(f'---i= {i}, n= {n}, returned eps={eps}')
         
-        print(f"Playing training game {i + 1}")
+      # print(f"Playing training game {i + 1}")
         game = Othello()
         # print(f"...q dict={ai.q}")
 
@@ -665,7 +656,7 @@ def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
         moves = 0
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-            print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
+          # print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
             moves += 1
             opponent = game.switchplayer(game.player)
 
@@ -677,7 +668,7 @@ def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
                 continue
 
             action = actions[0]
-            print(f"... q action just chosen ={actions[0]} ")
+          # print(f"... q action just chosen ={actions[0]} ")
             
             ####      KEEP TRACK OF LAST STATE (BEFORE MOVE) AND ACTION
             last[game.player]["state"] = game.state
@@ -686,7 +677,7 @@ def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
             ####      MAKE MOVE
             new_state = game.move(game.state, action, game.player)
             # print(f"/...AFTER MOVEfor player {game.player}")
-            game.printboard(new_state)
+            # game.printboard(new_state)
 
             ####      1 CHECK FOR GAME OVER, UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
@@ -724,9 +715,9 @@ def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
             ####      2 IF GAME NOT OVER, UPDATE Q VALUES WITH REWARDS
 
             ####  EVALUATE BOARD
-            print(f"---evaluate board")
+          # print(f"---evaluate board")
             evaluation = ai.evaluateboard(new_state, last[game.player]['action'], game.player)
-            print(f"---evaluation={evaluation}")
+          # print(f"---evaluation={evaluation}")
             ai.update(game.state, action, new_state, evaluation, game, game.player)
 
 
@@ -744,6 +735,7 @@ def train(n, alpha=0.5, epsilon=0.1, filename='testing'):
         completed += 1
         if completed % 100 == 0:
             print(f"played games = {completed}")
+            
         # print(f"...q table at end of game = {ai.q}")
     print(f"Done training {completed} games, saved as {filename}.pickle q")
     print(f'--length of qtable = {len(ai.q)}')

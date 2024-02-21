@@ -62,7 +62,7 @@ class Othello():
         else:
             return BLACK
 
-    def printboard(self, board):
+    def printboard(self, board, action=None):
         for row in board:
             for cell in row:
                 if cell == 0:
@@ -76,7 +76,9 @@ class Othello():
                 elif cell == '+':
                     print('+', end=' ')
                 elif cell == '-':
-                    print('-', end=' ')
+                    print('-', end=' '
+                elif cell == action:
+                    print)
             print()
 
     def create_board(self):
@@ -325,7 +327,7 @@ class Othello():
         # print(f'----end of gameover()')
         return False
         
-       
+    
 
 class OthelloAI():
     ### AI CAN USE CLASS ATTRIBUTES AS IT WILL NOT BE SERVED/SUBJECT TO REQUESTS
@@ -809,64 +811,59 @@ def evaluate(n, testq, benchmarkq=None):
             print(f'---i= {i} is odd')
             testai.color = WHITE
             benchmarkai.color = BLACK
-        # print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
+        print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
         # print(f"---testai.color={testai.printcolor}")
         # print(f"---benchmarkai.color={benchmarkai.printcolor}")
         
 
         while not game.gameover(game.state):
             print(f"\n===MOVE----")
+
+            print(f'===board before move')
+            game.printboard(game.state)
+
             ####    FOR WHOEVER IS PLAYING, CHOOSE AN ACITON
             if game.player == testai.color:
                 ####    MOVE IS FOR TESTAI
-                print(f"\n===TESTAI TO MOVE as {testai.printcolor}")
-                # print(f'===board before move')
-                # game.printboard(game.state)
+                print(f"\n===TESTAI TO MOVE as {game.playercolor}")
                 # print(f"===game.player= {game.playercolor}  ")
-                #### IF PLAYING AS WHITE, INVERT BOARD
-                # aiboard = invertcheck(game.state, testai)
-                # print(f'---aiboard for getting action')
-                # game.printboard(aiboard)
+                
                 action = testai.choose_q_action(game.state, game.player, game, epsilon=False)
            
             else:
                 ####   MOVE IS BENCHMARKAI
-                print(f"\n=== BENCHMARK TO MOVE as {benchmarkai.printcolor} ")
-                # print(f'===board before move')
-                # game.printboard(game.state)
-                # IF BENCHMARK IS WHITE, INVERT BOARD
-                # aiboard = invertcheck(game.state, benchmarkai)
-                # print(f'---aiboard for getting action')
-                # game.printboard(aiboard)
+                print(f"\n=== BENCHMARK TO MOVE as {game.playercolor} ")
+               
+         
                 action = benchmarkai.choose_q_action(game.state, game.player, game, epsilon=False)
              
             ####    MAKE THE MOVE IF THERE IS ONE
-            # print(f"===action={action}")
+            print(f"===action={action}")
             if action is not None:
                 game.move(game.state, action[0], game.player)
-                # print(f"===game state after move")
-                # game.printboard(game.state, action[0])
+                print(f"===game state after move")
+                game.printboard(game.state, action[0])
 
             ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVE
             if game.gameover(game.state):
-                # print(f"===game over")
+                print(f"===game over")
                 game.calc_winner(game.state)
-                # game.printboard(game.state)
-                # print(f"---game.winner= {game.winner}")
-                # print(f"---testai.color= {testai.color}")
+                game.printboard(game.state)
+                print(f"---game.winner= {game.winner}")
+                print(f"---testai.color= {testai.color}")
                 if game.winner == testai.color:
                     wins += 1
-                    # print(f"---END OF GAME {i+1}, \nTESTAI WINS. wins= {wins}||||||||||||\n")
+                    print(f"---END OF GAME {i+1}, \nTESTAI WINS. wins= {wins}||||||||||||\n")
                 elif game.winner == benchmarkai.color:
                     losses += 1
-                    # print(f"---END OF GAME {i+1}. BENCHMARKAI WINS. \nlosses = {losses}||||||||||||\n")
+                    print(f"---END OF GAME {i+1}. BENCHMARKAI WINS. \nlosses = {losses}||||||||||||\n")
                 elif game.winner == None:
                     ties += 1
-                    # print(f"---END OF GAME {i+1} \nTIE. ties={ties}||||||||||||\n")
+                    print(f"---END OF GAME {i+1} \nTIE. ties={ties}||||||||||||\n")
                 break
             
             game.player = game.switchplayer(game.player)
-        # print(f"---END OF GAME {i+1}")
+        print(f"---END OF GAME {i+1}")
     
     # win/loss ratio
     if losses == 0:

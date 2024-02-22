@@ -335,6 +335,9 @@ class OthelloAI():
         self.q = dict() # VALUE CAN BE NONE FOR UNEXPLORED STATES
         self.alpha = alpha
         self.epsilon = epsilon
+        self.minratio = float('inf')
+        self.maxratio = -float('inf')
+        
 
     def update(self, old_state, action, new_state, reward, game_instance, player=None):
         """
@@ -670,6 +673,7 @@ class OthelloAI():
         # print(f"Move value: {val}")
 
     def evaluate_board_2(self, board, player, instance):
+        # print(f"+++evaluate_board_2()") 
         val = 0
         size = len(board) - 1
         opponent = -player
@@ -679,6 +683,7 @@ class OthelloAI():
         opponent_frontier = 0
         player_mobility = 0
         opponent_mobility = 0
+        empties = 0
 
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
 
@@ -689,32 +694,34 @@ class OthelloAI():
                 if board[i][j] == player:
                     # count pieces
                     player_pieces += 1
-                    # is edge?
+                    # IS EDGE?
                     if self.is_edge(cell, size):
                         val += 0.2  
-                        print(f"piece on edge")
-                        # connects to corner?
+                        # print(f"piece on edge")
+                        # CONNECTS TO CORNER?
                         if self.connects_to_corner(cell, board, player):
-                            print(f"connects to corner")
+                            # print(f"connects to corner")
                             val += 0.3
-                    # is corner?
+                    # IS CORNER?
                     if self.is_corner(cell, size):
-                        print(f"corner capture")
+                        # print(f"corner piece")
                         val += 0.5  
                     # is corner adjacent?
                     if self.is_corner_adjacent(cell, size):
                         if not self.connects_to_corner(cell, board, player):
-                            print(f"corner adjacent")
+                            # print(f"corner adjacent")
                             val -= 0.5
-                    # is edge adjacent?
+                    # IS EDGE ADJACENT?
                     if self.is_edge_adjacent(board, cell, size):
                         # but not connects to edge
-                        print(f"edge adjacent")
-                        val -= 0.3
+                        # print(f"edge adjacent")
+                        val -= 0.4
                     
                 elif board[i][j] == opponent:
-                    print(f"opponent_pieces += 1")
+                    # print(f"opponent_pieces += 1")
                     opponent_pieces += 1
+                elif board[i][j] == 0:
+                    empties += 1
 
                 ####    FRONTIER PIECES
                 # if a position is filled
@@ -724,28 +731,58 @@ class OthelloAI():
                         # look for an empty position next to it = frontier
                         if 0 <= ni <= size and 0 <= nj <= size and board[ni][nj] == 0:
                             if board[i][j] == player:
-                                print(f"player_frontier += 1")
+                                # print(f"player_frontier += 1")
                                 player_frontier += 1
                             else:
-                                print(f"opponent_frontier += 1")
+                                # print(f"opponent_frontier += 1")
                                 opponent_frontier += 1
                             break
+        ####   CALCULATE GAME PHASE
+        if empties > 20:
+            phase = 1
+        elif empties <= 20 and empties > 10:
+            phase = 2
+        else:
+            phase = 3
+        # print(f"phase= {phase}")
 
         #####      MOBILITY AND POTENTIAL MOBILITY
         player_mobility = len(instance.available_actions(board, player))
         opponent_mobility = len(instance.available_actions(board, opponent))
         
         # Piece ratio
-        print(f"player_pieces={player_pieces}, opponent_pieces={opponent_pieces}, player_frontier={player_frontier}, opponent_frontier={opponent_frontier}, player_mobility={player_mobility}, opponent_mobility={opponent_mobility}")
-        val += (player_pieces - opponent_pieces) / (player_pieces + opponent_pieces + 1)  
+        # print(f"player_pieces={player_pieces}, opponent_pieces={opponent_pieces}")
+        ratio = (player_pieces - opponent_pieces) / (player_pieces + opponent_pieces) 
 
-        # TODO SORT THIS !!!!
+        # Assuming player_pieces and opponent_pieces are already calculated
+        def adjusted_sigmoid(x):
+            return 2 / (1 + math.exp(-x)) - 1
 
+
+        total_pieces = player_pieces + opponent_pieces
+        if total_pieces == 0:
+            ratio = 0  # Avoid division by zero in an empty or initial board state
+        else:
+            ratio = (player_pieces - opponent_pieces) / total_pieces
+        sigratio = adjusted_sigmoid(ratio)
+        # multiply by bias
+        sigratio *= 8
+
+        if sigratio < self.minratio:
+            self.minratio = sigratio
+        if sigratio > self.maxratio:
+            self.maxratio = sigratio
+        # print(f'--ratio= {round(ratio,2)}\n')
+        if phase == 3:
+            val += ratio
+    
         # Minimize frontier pieces
         val -= (player_frontier - opponent_frontier) / (player_frontier + opponent_frontier + 1) 
         # Mobility 
         val += (player_mobility - opponent_mobility) / (player_mobility + opponent_mobility + 1)  
-
+        # print(f"val={val}")
+        val = adjusted_sigmoid(val)
+        # print(f"sigmoid val={val}")
         return val
     
     def save_data(self, filename):
@@ -784,11 +821,11 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
     """
     ai = OthelloAI(alpha, epsilon)
   # print(f'...filename= {filename}')
+    maxeval = -float('inf') 
+    mineval = float('inf')
+    print(f'---maxeval={maxeval}')
 
     def epsilon_decay(initial_epsilon, iteration, total_iterations, min_epsilon=0.01, decay_rate=0.01):
-        
-        # LINEAR DECAY
-        # epsilon = max(min_epsilon, initial_epsilon - (i / (total_iterations - 1)) * (initial_epsilon - min_epsilon))
         
         # EXPONENTIAL DECAY
         epsilon = min_epsilon + (initial_epsilon - min_epsilon) * math.exp(- decay_rate * iteration)
@@ -810,7 +847,7 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
         # LINEAR DECAY
         ai.epsilon = epsilon_decay(1, i, n)
         # print(f'---i= {i}, n= {n}, ai.eps={ai.epsilon}')
-      # print(f"Playing training game {i + 1}")
+        print(f"\n>>>>>>>>>>Playing training game {i + 1}")
         game = Othello()
         # print(f"...q dict={ai.q}")
         ####      Keep track of last move made by either player
@@ -822,7 +859,7 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
         moves = 0
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-          # print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
+            print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
             moves += 1
             opponent = game.switchplayer(game.player)
 
@@ -847,7 +884,7 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
 
             ####      1 CHECK FOR GAME OVER, UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
-                # print(f"...game over")
+                print(f"...game over. winner = {game.winner}")
                 game.winner = game.calc_winner(new_state)
            
                 ####     PLAYER WON
@@ -881,12 +918,17 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
             ####      2 IF GAME NOT OVER, UPDATE Q VALUES WITH REWARDS
 
             ####  EVALUATE BOARD
-            print(f"---evaluate board")
+            # print(f"\n---evaluate board")
             evaluation = ai.evaluate_board_2(new_state, game.player, game)
-            print(f"---evaluation={evaluation}")
+            print(f"---evaluation= {round(evaluation,2)}")
+            if evaluation > maxeval:
+                maxeval = evaluation
+            if evaluation < mineval:
+                mineval = evaluation
+            ####     UPDATE Q TABLE
             ai.update(game.state, action, new_state, evaluation, game, game.player)
 
-
+            game.printboard(new_state, action)
 
             ####      SAVE THE NEW STATE
             game.state = new_state
@@ -904,6 +946,8 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
             
         # print(f"...q table at end of game = {ai.q}")
     print(f"Done training {completed} games, saved as {filename}.pickle q")
+    print(f'---maxratio={round(ai.maxratio,2)}, minratio={round(ai.minratio,2)}')
+    print(f'---maxeval= {round(maxeval,2)}, minval = {round(mineval,2)}')
     print(f'--length of qtable = {len(ai.q)}')
     # print(f"...q table = {ai.q}")
 

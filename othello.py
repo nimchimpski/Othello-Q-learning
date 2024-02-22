@@ -769,7 +769,7 @@ class OthelloAI():
         sigratio = adjusted_sigmoid(ratio)
         # multiply by bias
         
-        print(f'---sigratio= {sigratio}')
+        # print(f'---sigratio= {sigratio}')
 
         if sigratio < self.minratio:
             self.minratio = sigratio
@@ -818,7 +818,7 @@ def print_q_table(q_table):
 
 
 
-def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
+def train(n, alpha=0.5, epsilon=0.5, filename='testing'):
     """
     Train an AI by playing `n` games against itself.
     """
@@ -848,8 +848,8 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
     for i in range(n):
         # print(f'---i= {i}, n= {n}, self.epsilon={ai.epsilon}')
         # LINEAR DECAY
-        ai.epsilon = epsilon_decay(1, i, n)
-        # print(f'---i= {i}, n= {n}, ai.eps={ai.epsilon}')
+        
+        print(f'---EPSILON={round(ai.epsilon, 2)}')
         print(f"\n>>>>>>>>>>Playing training game {i + 1}")
         game = Othello()
         # print(f"...q dict={ai.q}")
@@ -923,7 +923,7 @@ def train(n, alpha=0.4, epsilon=0.5, filename='testing'):
             ####  EVALUATE BOARD
             # print(f"\n---evaluate board")
             evaluation = ai.evaluate_board_2(new_state, game.player, game)
-            print(f"---evaluation= {round(evaluation,2)}")
+            # print(f"---evaluation= {round(evaluation,2)}")
             if evaluation > maxeval:
                 maxeval = evaluation
             if evaluation < mineval:

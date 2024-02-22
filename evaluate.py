@@ -1,3 +1,3 @@
 from othello import *
 
-evaluate(1000, '66_SA')  
+evaluate(100, '66_boardeval')  

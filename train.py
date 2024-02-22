@@ -1,7 +1,7 @@
 from othello import *
 
-qtable = 'testing'
-ai = train(100, filename= qtable)
+qtable = '66_boardeval'
+ai = train(1, filename= qtable)
 # 
 # print_q_table(ai.q)
 #  

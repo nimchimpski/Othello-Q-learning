@@ -499,9 +499,12 @@ class OthelloAI():
                 # print(f">>>EPs=True : random action= {action}")
             # else:
                 # print(f'---a random action was not chosen, so use the q table to choose the best action')
+
         ### EPSILON FALSE: CHOOSE ACTION WITH HIGHEST Q VALUE
         ####     ALSO RETURN CAPTURES, SO CAN BE USED AS HEURISTIC
         # print(f'---action 2  = {action}')
+
+        # IF RAMDOM ACTION WAS NOT CHOSEN, USE Q TABLE 
         if not action:
             maxq = -float('inf')
             bestaction_q = None
@@ -514,11 +517,9 @@ class OthelloAI():
                 q = self.get_q_value(player, state, action)
 
 
-            #####    PRINT THIS+++++++++++++++  
-
                 # print(f"---action {action} q={q}")
 
-                ###    UNSEARCHED STATES/ACTIONS GET AWARDED 0 TODO: ???
+                ###   IS THERE A Q VALUE FOR THIS ACTION? 
                 if q is None:
                     q = 0
                 # print(f"---q={q}")
@@ -764,9 +765,11 @@ class OthelloAI():
             ratio = 0  # Avoid division by zero in an empty or initial board state
         else:
             ratio = (player_pieces - opponent_pieces) / total_pieces
+        ratio *= 8
         sigratio = adjusted_sigmoid(ratio)
         # multiply by bias
-        sigratio *= 8
+        
+        print(f'---sigratio= {sigratio}')
 
         if sigratio < self.minratio:
             self.minratio = sigratio

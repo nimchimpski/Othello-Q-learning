@@ -62,16 +62,21 @@ class Othello():
         else:
             return BLACK
 
-    def printboard(self, board, lastmove=None):
+    def printboard(self, board, lastmove=None, ):
         RED = '\033[91m'
         ENDC = '\033[0m'        
-        symbol_map = {1: 'X', -1: 'O', 0: '.'}
+        symbol_map = {1: 'X', -1: 'O', 0: '.', '*': '*', '+':'X', '-':'O'}
         for i, row in enumerate(board):
             row_str = ''
             for j, cell in enumerate(row):
                 if lastmove == (i,j):
                     row_str += RED + f' {symbol_map[cell]} ' + ENDC
+                elif cell == '+':
+                    row_str += RED + f' {symbol_map[cell]} ' + ENDC
+                elif cell == '-':
+                    row_str += RED + f' {symbol_map[cell]} ' + ENDC
                 else:
+                    # print(f'/cell={cell}')
                     row_str += f' {symbol_map[cell]} '
             print(row_str)
 
@@ -97,7 +102,7 @@ class Othello():
         !!! CHANGES BOARD VAR !!!
         """
         copyboard = deepcopy(board)
-        # print(f'\n++++move() for {player}, ')
+        print(f'\n++++move() for {player}, ')
         # self.printboard(board)
         # print(f'action={action}')
         # print(f'player={player}')
@@ -216,8 +221,8 @@ class Othello():
         """
         returns a list of tuples,  with all of the available actions `(i, j)` in that state, plus the captued pieces for each move, as a set.
         """
-        # print(f'\n+++AVAILABLE_ACTIONS FOR {player}')
-        # self.printboard(board)
+        print(f'\n+++AVAILABLE_ACTIONS FOR {player}')
+        self.printboard(board)
         actions = {}
         ####       CREATE THE DIRECTIONS
         directions = [(di, dj) for di in [-1, 0, 1] for dj in [-1, 0, 1] if not (di == dj == 0)]
@@ -260,9 +265,9 @@ class Othello():
                 else:
                     continue
                     # print(f'alldirs_captured=false') 
-        # print(f'>>>>>available actions={actions}')
+        print(f'>>>>>available actions={actions}')
         self.availactions = actions
-        # print(f'+--end of available_actions()')
+        print(f'...end of available_actions()')
         return actions
    
     def scores(self, board):
@@ -1107,8 +1112,6 @@ def evaluate(n, testq, benchmarkq=None):
             # print(f'===before move')
             # game.printboard(game.state)
 
-            
-
             ####   ONLY PLAY IF THERE ARE AVAILABLE ACTIONS
             if availactions:
 
@@ -1117,24 +1120,19 @@ def evaluate(n, testq, benchmarkq=None):
 
                     ####    MOVE IS FOR TESTAI
                     # print(f"===TESTAI TO MOVE as {game.playercolor(testai.color)}")
-
-
                     # print(f"===game.player= {game.playercolor}  ")
-                    # print(f'...CHOOSE Q ACTION')
 
+                    # print(f'...CHOOSE Q ACTION')
                     action = testai.choose_q_action(game.state, game.player, availactions, epsilon=False)
                     
                     if not action:
                         # print(f"...choosing evaluated acion")
                         action = testai.choose_evaluated_action(game.state, game.player, availactions, game)
-
                     # print(f"...ai action={action}")
 
                 else:
                     ####   MOVE IS BENCHMARKAI
                     # print(f"=== BENCHMARK TO MOVE as {game.playercolor(benchmarkai.color)} ")
-
-
                     actions = game.available_actions(game.state, game.player)
                     # print(f"...actions={actions}")
                     action = None
@@ -1158,7 +1156,6 @@ def evaluate(n, testq, benchmarkq=None):
                 else:
                     print(f"...no action!!!!!!!")
                 
-
             ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVE
             
             game.player = game.switchplayer(game.player)

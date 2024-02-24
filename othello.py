@@ -856,11 +856,17 @@ class OthelloAI():
         # IF CORNER
         if self.is_corner(action, last_index):
             # print(f"---action in corner")
-            val = 0.5
+            val = 0.9
         # IF NEXT TO CORNER
         elif self.is_corner_adjacent(action, last_index):
-            # print(f"--- action next to corner ")
-            val = -0.5
+            if not self.connects_to_corner(action, game_instance.state, player):
+                # print(f"--- action next to corner ")
+                val = -0.9
+        elif self.connects_to_corner(action, game_instance.state, player):
+                # print(f"--- action connects to corner ")
+                val = 0.9
+
+        
         # IF ON EDGE BUT NOT CORNER ADJACENT AND NOT CONNECTED TO CORNER
         elif self.is_edge(action, last_index) and not self.is_corner_adjacent(action, last_index) and not self.connects_to_corner(action, game_instance.state, player):
             # print(f"---action on edge")
@@ -869,8 +875,11 @@ class OthelloAI():
         elif self.is_edge(action, last_index) and self.connects_to_corner(action, game_instance.state, player):
             # print(f"---action connected to corner")
             val = 0.4
+        elif self.is_edge(action, last_index) and self.is_corner_adjacent(action, last_index):
+            # print(f"---action corner adjacent")
+            val = -0.3
         # IF EDGE ADJACENT
-        elif self.is_edge_adjacent(state, action, last_index):
+        elif self.is_edge_adjacent(state, action, last_index) and not self.is_corner_adjacent(action, last_index):
             # print(f"---action edge adjacent")
             val = -0.3
         return val

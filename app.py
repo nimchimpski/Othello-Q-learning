@@ -231,12 +231,18 @@ def play():
                 ####     START THE TIMER
                 start_time = time.time()
 
+                ####  IF AI IS WHITE, INVERT BOARD
+                if player == WHITE:
+                    aiboard = game.invertboard(board)
+                else:
+                    aiboard = board
                 # inputmove = input('enter ai move: ')
                 # aimove = tuple(int(char) for char in inputmove)
-                aimove = aiplayer.choose_q_action(board, player, availactions,  epsilon=False)
+                aimove = aiplayer.choose_q_action(aiboard, availactions,  epsilon=False)
                 print(f'---q table returns= {aimove}')
                 if not aimove:
-                    aimove = aiplayer.choose_evaluated_action(board, player, availactions, game)
+                    
+                    aimove = aiplayer.choose_evaluated_action(aiboard, availactions, game)
                     print(f'---evaluated action= {aimove}')
 
                 print(f'---board before ai move ')

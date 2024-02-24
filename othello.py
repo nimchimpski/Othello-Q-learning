@@ -301,6 +301,29 @@ class Othello():
         else:
             return None
 
+    def aimoves(self, board, availactions, player, aiplayer ):
+        """
+        returns new board and move 
+        """
+        ####  IF AI IS WHITE, INVERT BOARD
+        if player == WHITE:
+            aiboard = aiplayer.invertboard(board)
+        else:
+            aiboard = board
+        # inputmove = input('enter ai move: ')
+        # aimove = tuple(int(char) for char in inputmove)
+        aimove = aiplayer.choose_q_action(aiboard, availactions,  epsilon=False)
+        print(f'---q table returns= {aimove}')
+        if not aimove:
+            aimove = aiplayer.choose_evaluated_action(aiboard, availactions, game)
+            print(f'---evaluated action= {aimove}') 
+        print(f'---board before ai move ')
+        game.printboard(board)
+        #### MAKE AI MOVE
+        board = self.move( board, aimove[0], player )
+        return board, aimove
+
+    
     def gameover(self, board ):
         """
         Returns True if game is over, False otherwise.
@@ -610,7 +633,7 @@ class OthelloAI():
             return True
     
         for corner in corners:
-            if board[corner[0]][corner[1]] == player:
+            if board[corner[0]][corner[1]] == BLACK:
                 # Directly connected if on the same row, column, or diagonal
                 if corner[0] == move[0] or corner[1] == move[1] or abs(corner[0] - move[0]) == abs(corner[1] - move[1]):
                     # Check the path between the move and the corner
@@ -896,15 +919,15 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
         while True:
             # print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
             moves += 1
-            opponent = game.switchplayer(game.player)
-
+    
             ####      CHOOSE ACTION FROM Q TABLE
             availactions = game.available_actions(game.state, game.player)
-            actions = ai.choose_q_action(game.state, game.player, availactions)
-            if  actions is None:
-                # print(f"---no actions")
-                game.player = game.switchplayer(game.player)
-                continue
+            if availactions:
+                game.state = game.aimoves(game.state, game.availactions, game.player, ai)
+            else:
+                    # print(f"---no actions")
+                    game.player = game.switchplayer(game.player)
+                    continue
 
             action = actions[0]
           # print(f"... q action just chosen ={actions[0]} ")

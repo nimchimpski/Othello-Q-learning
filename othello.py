@@ -104,12 +104,12 @@ class Othello():
         copyboard = deepcopy(board)
         print(f'\n++++move() for {player}, ')
         # self.printboard(board)
-        # print(f'action={action}')
+        print(f'action={action}')
         # print(f'player={player}')
         if board is None:
             print("Board is None")
         availactions = self.available_actions(copyboard, player)
-        # print(f'availactions={availactions}')
+        print(f'>availactions={availactions}')
         # print(f'---action= {action}')
      
         #####      IS ACTION VALID
@@ -315,12 +315,13 @@ class Othello():
         aimove = aiplayer.choose_q_action(aiboard, availactions,  epsilon=False)
         print(f'---q table returns= {aimove}')
         if not aimove:
-            aimove = aiplayer.choose_evaluated_action(aiboard, availactions, game)
+            aimove = aiplayer.choose_evaluated_action(aiboard, availactions, self)
             print(f'---evaluated action= {aimove}') 
         print(f'---board before ai move ')
-        game.printboard(board)
+        self.printboard(board)
         #### MAKE AI MOVE
         board = self.move( board, aimove[0], player )
+
         return board, aimove
 
     
@@ -370,7 +371,7 @@ class OthelloAI():
         self.qs_used = 0
         
 
-    def update(self, old_state, action, new_state, reward, game_instance, player=None):
+    def update(self, old_state, action, new_state, reward, game_instance):
         """
         Update Q-learning model, given an old state, an action taken
         in that state, a new resulting state, and the reward received
@@ -379,9 +380,9 @@ class OthelloAI():
     
         # print(f"+++update")
         # print(f"---old_state={old_state}, action={action}, new_state={new_state}, reward={reward}")
-        old = self.get_q_value(player, old_state, action)
+        old = self.get_q_value( old_state, action)
         best_future = self.best_future_reward(new_state, game_instance)
-        self.update_q_value(player, old_state, action, old, reward, best_future)
+        self.update_q_value( old_state, action, old, reward, best_future)
         # print(f"+++>>>update: self.q={self.q}")
 
     def get_q_value(self, state, action):
@@ -694,7 +695,6 @@ class OthelloAI():
         # print(f"+++evaluate_board_2()") 
         val = 0
         size = len(board) - 1
-        opponent = -player
         player_pieces = 0
         opponent_pieces = 0
         player_frontier = 0
@@ -715,7 +715,7 @@ class OthelloAI():
                     val += self.evaluate_action(board, cell, instance)
                     print(f">>>>>>val={val}")
                     
-                elif board[i][j] == opponent:
+                elif board[i][j] == WHITE:
                     # print(f"opponent_pieces += 1")
                     opponent_pieces += 1
                 elif board[i][j] == 0:
@@ -728,7 +728,7 @@ class OthelloAI():
                         ni, nj = i + di, j + dj
                         # look for an empty position next to it = frontier
                         if 0 <= ni <= size and 0 <= nj <= size and board[ni][nj] == 0:
-                            if board[i][j] == player:
+                            if board[i][j] == BLACK:
                                 # print(f"player_frontier += 1")
                                 player_frontier += 1
                             else:
@@ -745,8 +745,8 @@ class OthelloAI():
         # print(f"phase= {phase}")
 
         #####      MOBILITY AND POTENTIAL MOBILITY
-        player_mobility = len(instance.available_actions(board, player))
-        opponent_mobility = len(instance.available_actions(board, opponent))
+        player_mobility = len(instance.available_actions(board,  BLACK))
+        opponent_mobility = len(instance.available_actions(board, WHITE))
         
         # Piece ratio
         # print(f"player_pieces={player_pieces}, opponent_pieces={opponent_pieces}")
@@ -917,27 +917,25 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
         moves = 0
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-            # print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
+            print(f'\n>>>GAME MOVE FOR {game.playercolor(game.player)}')
             moves += 1
     
             ####      CHOOSE ACTION FROM Q TABLE
             availactions = game.available_actions(game.state, game.player)
             if availactions:
-                game.state = game.aimoves(game.state, game.availactions, game.player, ai)
+                new_state, action = game.aimoves(game.state, availactions, game.player, ai)
             else:
                     # print(f"---no actions")
                     game.player = game.switchplayer(game.player)
                     continue
 
-            action = actions[0]
+    
           # print(f"... q action just chosen ={actions[0]} ")
             
             ####      KEEP TRACK OF LAST STATE (BEFORE MOVE) AND ACTION
             last[game.player]["state"] = game.state
             last[game.player]["action"] = action
 
-            ####      MAKE MOVE
-            new_state = game.move(game.state, action, game.player)
             # print(f"/...AFTER MOVEfor player {game.player}")
             # game.printboard(new_state)
 
@@ -978,14 +976,14 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
 
             ####  EVALUATE BOARD
             # print(f"\n---evaluate board")
-            evaluation = ai.evaluate_board(new_state, game.player, game)
+            evaluation = ai.evaluate_board(new_state, game)
             # print(f"---evaluation= {round(evaluation,2)}")
             if evaluation > maxeval:
                 maxeval = evaluation
             if evaluation < mineval:
                 mineval = evaluation
             ####     UPDATE Q TABLE
-            ai.update(game.state, action, new_state, evaluation, game, game.player)
+            ai.update(game.state, action, new_state, evaluation, game)
 
             # game.printboard(new_state, action)
 

@@ -361,7 +361,7 @@ class OthelloAI():
         self.update_q_value(player, old_state, action, old, reward, best_future)
         # print(f"+++>>>update: self.q={self.q}")
 
-    def get_q_value(self, player, state, action):
+    def get_q_value(self, state, action):
         """
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return NONE.
@@ -375,7 +375,7 @@ class OthelloAI():
         # print(f"---state type= {type(statetuple)}")
 
         
-        q =  self.q.get((player, statetuple, action))
+        q =  self.q.get((statetuple, action))
         # print(f"+++>>>get_q_value: {state}, {action} = q {q}")
         # print(f'---get_q_value returning= {q}')
         return q 
@@ -383,7 +383,7 @@ class OthelloAI():
     def statetotuple(self, state):
         return tuple(tuple(row) for row in state)
 
-    def update_q_value(self, player, state, action, old_q, reward, future_rewards):
+    def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
         Update the Q-value for the state `state` and the action `action`
         given the previous Q-value `old_q`, a current reward `reward`,
@@ -420,7 +420,7 @@ class OthelloAI():
         
         
         
-        self.q[player, statetuple, action] = result
+        self.q[statetuple, action] = result
       # print(f"---updateq self.q = {self.q[player, statetuple, action]}")
         
     def best_future_reward(self, state, game_instance):
@@ -464,7 +464,7 @@ class OthelloAI():
 
         # get max of the q values
 
-    def choose_q_action(self, state, player, availactions, epsilon=True):
+    def choose_q_action(self, state, availactions, epsilon=True):
         """
         Given a state `state`, return an action `(i, j)` to take.
         If `epsilon` is `False`, then return the best action
@@ -509,7 +509,7 @@ class OthelloAI():
 
             for action in availactions:
                 assert action is not None
-                q = self.get_q_value(player, state, action)
+                q = self.get_q_value( state, action)
                 
                 if q:
                     # print(f"---q = {q}")
@@ -535,7 +535,7 @@ class OthelloAI():
         # print(f'+--end of choose_q_action()')
         return action, captured
     
-    def choose_evaluated_action(self, state, player, availactions, game_instance):
+    def choose_evaluated_action(self, state, availactions, game_instance):
         """
         returns action and captures
         """
@@ -546,7 +546,7 @@ class OthelloAI():
         for action in availactions:
             # print(f"---action={action}")
             # print(f'---availactions[action]={availactions[action]}')
-            eval = self.evaluate_action(state, action, player, game_instance)
+            eval = self.evaluate_action(state, action, game_instance)
             # print(f"---eval={eval}")
             if eval > besteval:
                 besteval = eval
@@ -555,70 +555,6 @@ class OthelloAI():
         # print(f"---bestaction={bestaction}")
         return bestaction, availactions[bestaction]
         
-    # def evaluateboard(self, state, action, player, game_instance):
-        '''
-        frontier pieces
-        '''
-        print(f'+++evaluateboard()')
-        print(f'---action= {action}')
-        val = 0
-        l = len(state)-1
-        # CALCULATE IF ACTION IN CORNER
-        if action in [(0,0), (0,l), (l,0), (l,l)]:
-            print(f"---action in corner")
-            val = 0.5
-        # CALCULATE IF ACTION NEXT TO CORNER
-        elif action in [(0,1), (1,0), (1,1), (0,l-1), (1,l), (1,l-1), (l,1), (l-1,0), (l-1,1), (l-1,l), (l,l-1), (l-1,l-1)]:
-            print(f"--- action next to corner ")
-            val = -0.5
-        # CALCULATE IF ACTION ON EDGE
-        elif action[0] in [0, l] or action[1] in [0, l]:
-            if action not in [(0,0), (0,l), (l,0), (l,l)]:
-                print(f"---action on edge")
-                val = 0.2
-
-        # calculate if player has more available moves than opponent
-        playeravails = game_instance.available_actions(state, player)
-        opponent = game_instance.switchplayer(player)
-        oppavails = game_instance.available_actions(state, opponent)
-        if len(playeravails) > len(oppavails):
-            print(f"---player has more available moves")
-            val += 0.5
-        elif len(playeravails) < len(oppavails):
-            print(f"---opponent has more available moves")
-            val -= 0.5
-        # val += min(1, len(avails)/10)
-
-        return val
-
-    # def evaluate_move(board, move, player, captured_pieces):
-        val = 0
-        size = len(board) - 1
-
-        # Award for corner capture
-        corners = [(0, 0), (0, size), (size, 0), (size, size)]
-        if move in corners:
-            val += 1.0
-
-        # Award for edge moves, especially linking to a corner
-        if is_edge(move, size) and not is_corner_adjacent(move, size):
-            val += 0.5
-            if connects_to_corner(move, board, player):
-                val += 0.5
-
-        # Penalize moves adjacent to corners or along the edges
-        if is_corner_adjacent(move, size):
-            val -= 1.0
-        elif is_edge_adjacent(move, size):
-            val -= 0.5
-
-        # Mobility and disc ratio evaluation
-        mobility_diff, disc_ratio = evaluate_mobility_and_ratio(board, move, player, captured_pieces)
-        val += mobility_diff
-        val += disc_ratio
-
-        return val
-
     def is_edge(self,move, last_index):
         return move[0] == 0 or move[0] == last_index or move[1] == 0 or move[1] == last_index
 
@@ -654,7 +590,7 @@ class OthelloAI():
     def is_corner(self,move, last_index):
         return move in [(0, 0), (0, last_index), (last_index, 0), (last_index, last_index)]
     
-    def connects_to_corner(self, move, board, player):
+    def connects_to_corner(self, move, board):
         # Determine if a move is directly connected to a player-occupied corner with a path consisting only of player's pieces
         last_index = len(board) - 1
         corners = [(0, 0), (0, last_index), (last_index, 0), (last_index, last_index)]
@@ -669,7 +605,7 @@ class OthelloAI():
             while (x, y) != end:
                 x += dx
                 y += dy
-                if (x, y) != end and board[x][y] != player:  # Skip checking the end point itself
+                if (x, y) != end and board[x][y] != BLACK:  # Skip checking the end point itself
                     return False
             return True
     
@@ -682,7 +618,6 @@ class OthelloAI():
                         return True
         return False
 
-    def connects_to_corner_2(self, move, board, player):
         # Determine if a move is directly connected to a player-occupied corner with an uninterrupted path
         last_index = len(board) - 1
         corners = [(0, 0), (0, last_index), (last_index, 0), (last_index, last_index)]
@@ -715,8 +650,6 @@ class OthelloAI():
                         return True
         return False
 
-
-
     def evaluate_mobility_and_ratio(self,board, move, player, captured_pieces):
         # This is a placeholder for mobility and disc ratio evaluation
         # Implement your own logic here based on the current state after the move is made and captured pieces are flipped
@@ -734,7 +667,7 @@ class OthelloAI():
         # val = evaluate_move(new_board, move, player, captured_pieces)
         # print(f"Move value: {val}")
 
-    def evaluate_board_2(self, board, player, instance):
+    def evaluate_board(self, board, instance):
         # print(f"+++evaluate_board_2()") 
         val = 0
         size = len(board) - 1
@@ -753,31 +686,11 @@ class OthelloAI():
         for i in range(len(board)):
             for j in range(len(board)):
                 cell = (i, j)
-                if board[i][j] == player:
+                if board[i][j] == BLACK:
                     # count pieces
                     player_pieces += 1
-                    # IS EDGE?
-                    if self.is_edge(cell, size):
-                        val += 0.2  
-                        # print(f"piece on edge")
-                        # CONNECTS TO CORNER?
-                        if self.connects_to_corner(cell, board, player):
-                            # print(f"connects to corner")
-                            val += 0.3
-                    # IS CORNER?
-                    if self.is_corner(cell, size):
-                        # print(f"corner piece")
-                        val += 0.5  
-                    # is corner adjacent?
-                    if self.is_corner_adjacent(cell, size):
-                        if not self.connects_to_corner(cell, board, player):
-                            # print(f"corner adjacent")
-                            val -= 0.5
-                    # IS EDGE ADJACENT?
-                    if self.is_edge_adjacent(board, cell, size):
-                        # but not connects to edge
-                        # print(f"edge adjacent")
-                        val -= 0.4
+                    val += self.evaluate_action(board, cell, instance)
+                    print(f">>>>>>val={val}")
                     
                 elif board[i][j] == opponent:
                     # print(f"opponent_pieces += 1")
@@ -849,7 +762,7 @@ class OthelloAI():
         # print(f"sigmoid val={val}")
         return val
     
-    def evaluate_action(self, state, action, player, game_instance):
+    def evaluate_action(self, state, action, game_instance):
         # print(f"+++evaluate_action()")
         val = 0
         last_index = game_instance.size - 1
@@ -859,20 +772,20 @@ class OthelloAI():
             val = 0.9
         # IF NEXT TO CORNER
         elif self.is_corner_adjacent(action, last_index):
-            if not self.connects_to_corner(action, game_instance.state, player):
+            if not self.connects_to_corner(action, game_instance.state):
                 # print(f"--- action next to corner ")
                 val = -0.9
-        elif self.connects_to_corner(action, game_instance.state, player):
+        elif self.connects_to_corner(action, game_instance.state):
                 # print(f"--- action connects to corner ")
-                val = 0.9
+                val = 0.6
 
         
         # IF ON EDGE BUT NOT CORNER ADJACENT AND NOT CONNECTED TO CORNER
-        elif self.is_edge(action, last_index) and not self.is_corner_adjacent(action, last_index) and not self.connects_to_corner(action, game_instance.state, player):
+        elif self.is_edge(action, last_index) and not self.is_corner_adjacent(action, last_index) and not self.connects_to_corner(action, game_instance.state,  ):
             # print(f"---action on edge")
             val = 0.3
         # IF ON EDGE AND CONNECTED TO CORNER 
-        elif self.is_edge(action, last_index) and self.connects_to_corner(action, game_instance.state, player):
+        elif self.is_edge(action, last_index) and self.connects_to_corner(action, game_instance.state,  ):
             # print(f"---action connected to corner")
             val = 0.4
         elif self.is_edge(action, last_index) and self.is_corner_adjacent(action, last_index):
@@ -898,6 +811,17 @@ class OthelloAI():
 
         return val
 
+    def invertboard(self, board):
+        copyboard = deepcopy(board)
+        for i in range(len(copyboard)):
+            for j in range(len(copyboard)):
+                if copyboard[i][j] == 1:
+                    copyboard[i][j] = -1
+                elif copyboard[i][j] == -1:
+                    copyboard[i][j] = 1
+        return copyboard
+      
+    
     def save_data(self, filename):
         with open(f'qtables/{filename}.pickle', 'wb') as f:
             # print(f"+++saving qtable: {self.q}")
@@ -913,15 +837,13 @@ class OthelloAI():
 
 def print_q_table(q_table):
     for key, value in q_table.items():
-        player, state, action = key  # Unpack the key
+        state, action = key  # Unpack the key
         # Convert state to a readable format
         state_str = '\n'.join(' '.join('X' if cell == 1 else 'O' if cell == -1 else '.' for cell in row) for row in state)
         
         # Determine player's color for printing
-        player_str = 'BLACK' if player == 1 else 'WHITE'
         
         # Format and print the information
-        print(f"Player: {player_str}")
         print(f"State:\n{state_str}")
         print(f"Action: {action}")
         print(f"Q-value: {value}")
@@ -1033,7 +955,7 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
 
             ####  EVALUATE BOARD
             # print(f"\n---evaluate board")
-            evaluation = ai.evaluate_board_2(new_state, game.player, game)
+            evaluation = ai.evaluate_board(new_state, game.player, game)
             # print(f"---evaluation= {round(evaluation,2)}")
             if evaluation > maxeval:
                 maxeval = evaluation

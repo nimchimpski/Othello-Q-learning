@@ -19,7 +19,7 @@ app = Flask(__name__ )
 app.secret_key = "supermofustrongpword"
 
 aiplayer = othello.OthelloAI()
-aiplayer.q = aiplayer.load_data('qtable')
+aiplayer.q = aiplayer.load_data('empty')
 # print(f'---loaded q table = {aiplayer.q}')
 
 
@@ -112,8 +112,6 @@ def index():
     # render page with size of board variable
     return render_template('index.html', size=size)
 
-
-
 @app.route('/play', methods=['POST', 'GET'])
 def play():
     # print('>>>PLAY ROUTE GET')
@@ -135,13 +133,10 @@ def play():
     db_row = Gamedb.query.filter_by(dbsessionid=sessionid).first()
     if not db_row:
         print('---no db_row in db---')
-    # else:
-        # print(f'---db_row found= ')
        
-   
     #########      POST     #########
     if request.method == 'POST':
-        # print('>>>PLAY ROUTE POST')
+        print('>>>PLAY ROUTE POST')
 
         ####    PRINT ALL JSON
         print(f"\n--- request.json= {request.json} ---") 
@@ -198,7 +193,7 @@ def play():
             if human != -1:
             #### IF HUMAN IS NULL JUST SEND INITIAL BOARD
                 responsevars = {'newgame': True, 'player': player, 'board': board}
-                print(f'---First responsevars= {responsevars}')
+                # print(f'---First responsevars= {responsevars}')
                 return jsonify({'newgame': True,'board': board, 'player': player})
 
         #    NOT A NEW GAME
@@ -226,28 +221,32 @@ def play():
             ####             AI MOVE
 
             print(f'\n----GET AI MOVE. NO HUMANMOVE...HUMANMOVE WAS SAVED IN LAST REQUEST---\n')
-            print(f"---player AI? {player}---")
+            print(f"---player= {player} ai= -")
             ####  CHECK FOR MOVES AVAILABLE FOR AI
-            if  game.available_actions(board, player):
+            availactions = game.available_actions(board, player)
+            if  availactions:
                 print(f'---AI MOVES AVAILABLE---')
-                print(f'---ai avail actions= {game.available_actions(board, player)}')  
+                print(f'---ai avail actions= {availactions}')  
 
                 ####     START THE TIMER
                 start_time = time.time()
 
                 # inputmove = input('enter ai move: ')
                 # aimove = tuple(int(char) for char in inputmove)
-                aimove = aiplayer.choose_q_action(board, player, game, epsilon=False)
-                print(f'---ai move= {aimove}')
+                aimove = aiplayer.choose_q_action(board, player, availactions,  epsilon=False)
+                print(f'---q table returns= {aimove}')
+                if not aimove:
+                    aimove = aiplayer.choose_evaluated_action(board, player, availactions, game)
+                    print(f'---evaluated action= {aimove}')
 
-                # print(f'---board before ai move ')
-                # game.printboard(board)
+                print(f'---board before ai move ')
+                game.printboard(board)
                 #### MAKE AI MOVE
-                game.move( board, aimove[0], player )
+                board = game.move( board, aimove[0], player )
 
                 ####  SAVE BOARD    
-                # print(f'---board + ai move TO SAVE---')
-                # game.printboard(board)
+                print(f'---board + ai move TO SAVE---')
+                game.printboard(board)
                 db_row.saveboard(sessionid, board, player, human)
 
                 ####  CHECK TIME TAKEN AND DELAY IF LESS THAN 2 SECONDS
@@ -263,7 +262,7 @@ def play():
                 # CHECK HUMAN HAS MOVES - IF NOT GAME OVER 
                 humanavails = game.available_actions(board, player)
                 print(f'---avail moves hum={humanavails}')  
-                if not   game.available_actions(board, player):
+                if not  humanavails:
                     print(f'no human avails?={humanavails}. GAMEOVER')
                     winner = game.calc_winner(board)
                 print(f'---response vars no ai moves: gameover={winner},player={player}, board={board}')
@@ -287,13 +286,14 @@ def play():
         db_row.saveboard(sessionid, board, player, human)
 
         if player == human:
-            print(f'---ai move??? {aimove}')
-            print(f'--aimove[0]], {aimove[0]}')
+            print(f'---player= {player}, human= {human}')    
+            print(f'---ai move {aimove}')
             aimove = aimove[0]
             ####   ADD VALID MOVES
 
             # Ai HAS MOVED - CHECK IF HUMAN CAN MOVE.
-            print(f'----avail moves={game.available_actions(board, player)}')
+            print(f'----{player} avail moves={game.available_actions(board, player)}')
+
             if not game.available_actions(board, player):
                 print(f'---NO VALID MOVES FOR HUMAN---')
                 # IF NOT, PLAYER = AI
@@ -308,6 +308,7 @@ def play():
         # responsedict = {'gameover': winner, 'player': player, 'board': board}
         print(f'---respnse gameover={winner}')
         print(f'---respnse player= {player}')
+        print(f'---board to be returned= {board}')  
         game.printboard(board)
         # print(f'---respnse aimove= {aimove}')
         # print(f'---response normal  {responsedict}')

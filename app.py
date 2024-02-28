@@ -18,9 +18,10 @@ import othello as othello
 app = Flask(__name__ )
 app.secret_key = "supermofustrongpword"
 
-aiplayer = othello.OthelloAI()
+aiplayer = othello.OthelloAI(epsilon = 0)
+print(f'---aiplayer.epsilon= {aiplayer.epsilon}')
 aiplayer.q = aiplayer.load_data('empty')
-# print(f'---loaded q table = {aiplayer.q}')
+print(f'---loaded q table = {aiplayer.q}')
 
 
 ####      CONFIGURE PROXYFIX WITH THE CORRECT PARAMETERS
@@ -150,9 +151,9 @@ def play():
             human = int(human)
         humanmove = request.json.get('humanmove')
         if human == 1:
-            ai = -1
+            ai= -1
         else:
-            ai = 1
+            ai= 1
         # print(f"---human= {human}, ai= {ai}---")
 
         ####     CHECK IF NEW GAME + INITIALISE
@@ -231,13 +232,12 @@ def play():
                 ####     START THE TIMER
                 start_time = time.time()
 
-
-
-
+                ####     GET AI MOVE AND UPDATE BOARD
+                board, aimove = game.aimoves(board, availactions, player, aiplayer)
 
                 ####  SAVE BOARD    
                 print(f'---board + ai move TO SAVE---')
-                self.printboard(board)
+                game.printboard(board)
                 db_row.saveboard(sessionid, board, player, human)
 
                 ####  CHECK TIME TAKEN AND DELAY IF LESS THAN 2 SECONDS

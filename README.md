@@ -9,7 +9,7 @@ A Heuristic evaluation function is used after every move to update the q-table.
 
 ### In Evaluate function: ### 
 The model, using a specified q-table, playes against a random player.\
-Win rate and win/loss ration are recorded.
+Win rate and win/loss ratio are recorded.
 
 ### Flask ###
 A flask app presents a web page game where the user can play a model, using a predetermined Q-table.

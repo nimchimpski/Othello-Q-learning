@@ -302,9 +302,9 @@ class Othello():
         else:
             return None
 
-    def aimoves(self, board, availactions, player, aiplayer, epsilon=False):
+    def aimoves(self, board, availactions, player, aiplayer):
         """
-        returns new board and move 
+        geta the AI move, returns new board and move 
         """
         # print(f'+++aimoves()')
         ####  IF AI IS WHITE, INVERT BOARD
@@ -314,7 +314,7 @@ class Othello():
             aiboard = board
         # inputmove = input('enter ai move: ')
         # aimove = tuple(int(char) for char in inputmove)
-        aimove = aiplayer.choose_q_action(aiboard, availactions,  epsilon)
+        aimove = aiplayer.choose_q_action(aiboard, availactions)
         print(f'---q table returns= {aimove}')
         if not aimove:
             aimove = aiplayer.choose_evaluated_action(aiboard, availactions, self)
@@ -326,7 +326,6 @@ class Othello():
 
         return board, aimove
 
-    
     def gameover(self, board ):
         """
         Returns True if game is over, False otherwise.
@@ -496,7 +495,7 @@ class OthelloAI():
 
         # get max of the q values
 
-    def choose_q_action(self, state, availactions, epsilon=True):
+    def choose_q_action(self, state, availactions):
         """
         Given a state `state`, return an action `(i, j)` to take.
         If `epsilon` is `False`, then return the best action
@@ -505,7 +504,7 @@ class OthelloAI():
         If `epsilon` is `True`, return None.
         """
         print(f"+++choose-Q-action")
-        print(f'---epsilon={epsilon}')
+        print(f'---epsilon={self.epsilon}')
         # print(f"---availactions={availactions}")
         if not availactions:
             return None
@@ -519,16 +518,17 @@ class OthelloAI():
 
         # WITH EPSILON TRUE: CHOOSE RANDOM ACTION WITH EPSILON PROB
         
-        elif epsilon == True:
-            # print(f"---CHOOSING EPSILON HERE = {epsilon}")
-            x = random.random()
-            print(f"---random x = {x}")
-            if x < self.epsilon:
-                exploration = True
-                print(f'---EXPLORATION')
-                action = random.choice(list(availactions))
-                # print(f">>>EPs=True : random action= {action}")
-            # else:
+       
+        # print(f"---CHOOSING EPSILON HERE = {epsilon}")
+        x = random.random()
+        print(f"---random x = {x}")
+        if x < self.epsilon:
+            exploration = True
+            print(f'---EXPLORATION')
+            action = random.choice(list(availactions))
+            # print(f">>>EPs=True : random action= {action}")
+        else:
+            ...
                 # print(f'---a random action was not chosen, so use the q table to choose the best action')
 
         ### EPSILON FALSE: CHOOSE ACTION WITH HIGHEST Q VALUE

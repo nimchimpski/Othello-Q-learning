@@ -308,9 +308,13 @@ class Othello():
         geta the AI move, returns new board and move 
         """
         print(f'+++aimoves()')
-        # get canonical board
-        canonboard = aiplayer.canonical_board_representation(board)
+        # get canonical board and trans
+        canonboard, trans = aiplayer.canonical_board_representation(board)
         self.printboard(canonboard)
+        # trans the availactions
+        # availactions_trans = #TODO
+
+        
         ####  IF AI IS WHITE, INVERT BOARD
         if player == WHITE:
             aiboard = aiplayer.invertboard(canonboard)
@@ -910,6 +914,7 @@ class OthelloAI():
         return tuples_list
 
 
+    ### CANONICAL BOARD REPRESENTATION
 
     def rotate_board(self,board):
         """Rotate the board 90 degrees clockwise."""
@@ -919,7 +924,7 @@ class OthelloAI():
         """Reflect the board horizontally."""
         return [row[::-1] for row in board]
 
-    def generate_all_symmetries_with_transformations(self,board):
+    def symmetries_with_xforms(self,board):
         # Initial board with no transformations
         rotations = [(board, ["none"])]
         # Generate rotations
@@ -939,8 +944,8 @@ class OthelloAI():
 
         return rotations + reflections
 
-    def canonical_board_representation(self,board):
-        symmetries = self.generate_all_symmetries_with_transformations(board)
+    def canonical_board(self,board):
+        symmetries = self.symmetries_with_xforms(board)
         # Flatten boards for comparison and keep transformations
         flatsyms = [([element for row in sym[0] for element in row], sym[1]) for sym in symmetries]
 
@@ -952,18 +957,6 @@ class OthelloAI():
         result = [lexicographically_smallest[i:i + board_size] for i in range(0, len(lexicographically_smallest), board_size)]
 
         return result, transformations
-
-    # # Example usage:
-    # board = [
-    #     [0, 0, 0, 0],
-    #     [0, -1, 1, 0],
-    #     [0, 1, -1, 0],
-    #     [0, 0, 0, 0]]
-
-    # canonical_board, transformations = canonical_board_representation(board)
-    # print("---canon=", (canonical_board, transformations))
-
-
 
       
         
@@ -997,10 +990,8 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
     # print(f'---maxeval={maxeval}')
 
     def epsilon_decay(iteration, total_iterations, initial_epsilon=2, min_epsilon=0.01,   decay_rate=0.01):
-        
         # EXPONENTIAL DECAY
         epsilon = min_epsilon + (initial_epsilon - min_epsilon) * math.exp(- decay_rate * iteration)
-
         return epsilon
 
     # if file isnt 'testing', check if it exists
@@ -1018,7 +1009,7 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
     for i in range(n):
         # print(f'---i= {i}, n= {n}, maxeps={maxeps}, mineps={mineps}, decay_rate={decay_rate}')
         ai.epsilon = epsilon_decay( i+1, n, maxeps, mineps, decay_rate)
-        print(f'---EPSILON={round(ai.epsilon, 2)}')
+        # print(f'---EPSILON={round(ai.epsilon, 2)}')
         print(f"\n>>>>>>>>>>Playing training game {i + 1}")
         game = Othello()
         
@@ -1034,6 +1025,12 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
             print(f'\n>>>MOVE FOR {game.playercolor(game.player)}')
             moves += 1
             opponent = game.switchplayer(game.player)
+            game.printboard(game.state)
+    
+            canonboard, xform = ai.canonical_board(game.state)
+            print(f'---canonboard:')
+            game.printboard(canonboard)
+            print(f'---xform={xform}')
     
             ####      CHOOSE ACTION FROM Q TABLE
             availactions = game.available_actions(game.state, game.player)

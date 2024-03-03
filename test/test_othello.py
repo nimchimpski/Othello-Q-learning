@@ -1,4 +1,4 @@
-from othello import Othello
+from othello import Othello, OthelloAI
 
 
 
@@ -55,3 +55,23 @@ def test_available_actions():
     # assert game.available_actions(board, -1) == {(0,2),(1,3),(2,0),(3,1)}
     # assert game.available_actions(board, 0) == None
    
+
+# def test_generate_2_tuples():
+#     ai = OthelloAI()
+#     assert ai.generate_2_tuples(3) == [((0, 0), (0, 1)), ((0, 1), (0, 2)), ((1, 0), (1, 1)), ((1, 1), (1, 2)), ((2, 0), (2, 1)), ((2, 1), (2, 2))]
+
+def test_generate_all_symetries():
+    ai = OthelloAI()
+    board = [[1,1,0],
+             [0,0,0],
+             [0,0,0]]
+             
+    assert ai.generate_all_symetries(3) == [board, 
+    [[[1, 1, 0], [0, 0, 0], [0, 0, 0]], 
+    [(0, 0, 1), (0, 0, 1), (0, 0, 0)], 
+    [(0, 0, 0), (0, 0, 0), (0, 1, 1)], 
+    [(0, 0, 0), (1, 0, 0), (1, 0, 0)], 
+    [[0, 0, 0], [0, 0, 0], [1, 1, 0]], 
+    [(0, 0, 0), (0, 0, 1), (0, 0, 1)], 
+    [(0, 1, 1), (0, 0, 0), (0, 0, 0)], 
+    [(1, 0, 0), (1, 0, 0), (0, 0, 0)]]]

@@ -4,6 +4,7 @@ import time
 import pickle
 import os
 from copy import deepcopy
+import numpy as np
 
 EMPTY = 0
 BLACK = 1
@@ -306,24 +307,32 @@ class Othello():
         """
         geta the AI move, returns new board and move 
         """
-        # print(f'+++aimoves()')
+        print(f'+++aimoves()')
+        # get canonical board
+        canonboard = aiplayer.canonical_board_representation(board)
+        self.printboard(canonboard)
         ####  IF AI IS WHITE, INVERT BOARD
         if player == WHITE:
-            aiboard = aiplayer.invertboard(board)
+            aiboard = aiplayer.invertboard(canonboard)
         else:
-            aiboard = board
+            aiboard = canonboard
         # inputmove = input('enter ai move: ')
         # aimove = tuple(int(char) for char in inputmove)
         aimove = aiplayer.choose_q_action(aiboard, availactions)
         print(f'---q table returns= {aimove}')
         if not aimove:
+            '''
+            eval act:
+            compare all availact outcomes board evaluations,???
+            '''
             aimove = aiplayer.choose_evaluated_action(aiboard, availactions, self)
             print(f'---evaluated action= {aimove}') 
         # print(f'---board before ai move ')
         # self.printboard(board)
         #### MAKE AI MOVE
         board = self.move( board, aimove[0], player )
-
+ 
+        # TODO return the state evaluation
         return board, aimove
 
     def gameover(self, board ):
@@ -503,8 +512,8 @@ class OthelloAI():
         using 0 for pairs that have no Q-values).
         If `epsilon` is `True`, return None.
         """
-        print(f"+++choose-Q-action")
-        print(f'---epsilon={self.epsilon}')
+        # print(f"+++choose-Q-action")
+        # print(f'---epsilon={self.epsilon}')
         # print(f"---availactions={availactions}")
         if not availactions:
             return None
@@ -516,14 +525,13 @@ class OthelloAI():
             action = key
             # print(f'---action 1  = {action}')
 
-        # WITH EPSILON TRUE: CHOOSE RANDOM ACTION WITH EPSILON PROB
+        # WITH EPSILON >0 : CHOOSE RANDOM ACTION WITH EPSILON PROB
         
        
         # print(f"---CHOOSING EPSILON HERE = {epsilon}")
         x = random.random()
         print(f"---random x = {x}")
         if x < self.epsilon:
-            exploration = True
             print(f'---EXPLORATION')
             action = random.choice(list(availactions))
             # print(f">>>EPs=True : random action= {action}")
@@ -580,8 +588,8 @@ class OthelloAI():
         for action in availactions:
             # print(f"---action={action}")
             # print(f'---availactions[action]={availactions[action]}')
-            eval = self.evaluate_action(state, action, game_instance)
-            # print(f"---eval={eval}")
+            eval = self.evaluate_action(state, action,game_instance)
+            print(f"---{action} eval={eval}")
             if eval > besteval:
                 besteval = eval
                 bestaction = action
@@ -601,7 +609,6 @@ class OthelloAI():
             ]
         return move in corner_adjacent_positions
 
-
     def is_edge_adjacent(self, board, move, last_index):
         # print(f'--move= {move}')
         # Check adjacent to vertical edges and not at corners
@@ -619,7 +626,6 @@ class OthelloAI():
                 return True
 
         return False
-
 
     def is_corner(self,move, last_index):
         return move in [(0, 0), (0, last_index), (last_index, 0), (last_index, last_index)]
@@ -796,6 +802,9 @@ class OthelloAI():
         return val
     
     def evaluate_action(self, state, action, game_instance):
+        '''
+
+        '''
         # print(f"+++evaluate_action()")
         val = 0
         last_index = game_instance.size - 1
@@ -808,22 +817,24 @@ class OthelloAI():
             if not self.connects_to_corner(action, game_instance.state):
                 # print(f"--- action next to corner ")
                 val = -0.9
-        elif self.connects_to_corner(action, game_instance.state):
+            elif self.connects_to_corner(action, game_instance.state):
                 # print(f"--- action connects to corner ")
                 val = 0.6
 
         
         # IF ON EDGE BUT NOT CORNER ADJACENT AND NOT CONNECTED TO CORNER
-        elif self.is_edge(action, last_index) and not self.is_corner_adjacent(action, last_index) and not self.connects_to_corner(action, game_instance.state,  ):
-            # print(f"---action on edge")
-            val = 0.3
-        # IF ON EDGE AND CONNECTED TO CORNER 
-        elif self.is_edge(action, last_index) and self.connects_to_corner(action, game_instance.state,  ):
-            # print(f"---action connected to corner")
-            val = 0.4
-        elif self.is_edge(action, last_index) and self.is_corner_adjacent(action, last_index):
-            # print(f"---action corner adjacent")
-            val = -0.3
+        elif self.is_edge(action, last_index):
+            if  self.is_corner_adjacent(action, last_index) and not self.connects_to_corner(action, game_instance.state,  ):
+                print(f"---{action} doesnt connet to corner???")
+                # print(f"---action on edge")
+                val = 0.3
+            # IF ON EDGE AND CONNECTED TO CORNER 
+            elif  self.connects_to_corner(action, game_instance.state,  ):
+                # print(f"---action connected to corner")
+                val = 0.5
+            elif self.is_corner_adjacent(action, last_index):
+                # print(f"---action corner adjacent")
+                val = -0.5
         # IF EDGE ADJACENT
         elif self.is_edge_adjacent(state, action, last_index) and not self.is_corner_adjacent(action, last_index):
             # print(f"---action edge adjacent")
@@ -853,7 +864,6 @@ class OthelloAI():
                 elif copyboard[i][j] == -1:
                     copyboard[i][j] = 1
         return copyboard
-      
     
     def save_data(self, filename):
         with open(f'qtables/{filename}.pickle', 'wb') as f:
@@ -867,6 +877,97 @@ class OthelloAI():
             q = pickle.load(f)
             return q
  
+    def evalweights(self, board):
+        print(f"+++evalweights()")
+        board = np.array(board)
+        weights = np.array([
+            [1, -0.25, 0.1,  0.1, -0.25, 1],
+            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
+            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
+            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
+            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
+            [1, -0.25, 0.1,  0.1, -0.25, 1]
+        ])
+
+        # Element-wise multiplication followed by sum
+        result = np.sum(board * weights)
+        return result
+
+    def generate_2_tuples(self, board_size):
+        tuples_list = []
+        for k in range (1,10):
+            for i in range(board_size):
+                for j in range(board_size):
+                    if j < board_size - 1:  # Horizontal tuples
+                        tuples_list.append(((i, j), (i, j + 1),k))
+                    if i < board_size - 1:  # Vertical tuples
+                        tuples_list.append(((i, j), (i + 1, j),k))
+                    if i < board_size - 1 and j < board_size - 1:  # Diagonal right-down
+                        tuples_list.append(((i, j), (i + 1, j + 1),k))
+                    if i < board_size - 1 and j > 0:  # Diagonal left-down
+                        tuples_list.append(((i, j), (i + 1, j - 1),k))
+        # print(f"---tuples_list={tuples_list}")
+        return tuples_list
+
+
+
+    def rotate_board(self,board):
+        """Rotate the board 90 degrees clockwise."""
+        return [list(row) for row in zip(*board[::-1])]
+
+    def reflect_board(self,board):
+        """Reflect the board horizontally."""
+        return [row[::-1] for row in board]
+
+    def generate_all_symmetries_with_transformations(self,board):
+        # Initial board with no transformations
+        rotations = [(board, ["none"])]
+        # Generate rotations
+        for i in range(1, 4):
+            new_rotation = self.rotate_board(rotations[-1][0])
+            rotations.append((new_rotation, [f"rotate {90 * i}"]))
+
+        reflections = []
+        # Generate reflections for original and each rotation
+        for rot, trans in rotations:
+            new_reflection = self.reflect_board(rot)
+            # If initial transformation was "none", replace with "reflect horizontally"
+            if trans == ["none"]:
+                reflections.append((new_reflection, ["reflect horizontally"]))
+            else:
+                reflections.append((new_reflection, trans + ["reflect horizontally"]))
+
+        return rotations + reflections
+
+    def canonical_board_representation(self,board):
+        symmetries = self.generate_all_symmetries_with_transformations(board)
+        # Flatten boards for comparison and keep transformations
+        flatsyms = [([element for row in sym[0] for element in row], sym[1]) for sym in symmetries]
+
+        # Find the lexicographically smallest board and its transformation history
+        lexicographically_smallest, transformations = min(flatsyms, key=lambda x: x[0])
+
+        # Reconstruct the 2D list from the flattened version
+        board_size = len(board)
+        result = [lexicographically_smallest[i:i + board_size] for i in range(0, len(lexicographically_smallest), board_size)]
+
+        return result, transformations
+
+    # # Example usage:
+    # board = [
+    #     [0, 0, 0, 0],
+    #     [0, -1, 1, 0],
+    #     [0, 1, -1, 0],
+    #     [0, 0, 0, 0]]
+
+    # canonical_board, transformations = canonical_board_representation(board)
+    # print("---canon=", (canonical_board, transformations))
+
+
+
+      
+        
+
 
 def print_q_table(q_table):
     for key, value in q_table.items():
@@ -960,7 +1061,7 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
             # print(f"/...AFTER MOVEfor player {game.player}")
             # game.printboard(new_state)
 
-            ####      1 CHECK FOR GAME OVER, UPDATE Q VALUES WITH REWARDS
+            ####      1 CHECK FOR GAME OVER, IF SO UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
                 # print(f"...game over. winner = {game.winner}")
                 game.winner = game.calc_winner(new_state)

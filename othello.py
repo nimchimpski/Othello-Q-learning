@@ -5,6 +5,8 @@ import pickle
 import os
 from copy import deepcopy
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 EMPTY = 0
 BLACK = 1
@@ -305,32 +307,37 @@ class Othello():
 
     def aimoves(self, board, availactions, player, aiplayer):
         """
-        geta the AI move, returns new board and move 
+        geta the AI move, returns new board and move() 
         """
-        print(f'+++aimoves()')
+        # print(f'+++aimoves()')
         # get canonical board and trans
-        canonboard, trans = aiplayer.canonical_board_representation(board)
-        self.printboard(canonboard)
+        canonboard, trans = aiplayer.canonical_board(board)
+        # self.printboard(canonboard)
         # trans the availactions
-        # availactions_trans = #TODO
 
         
         ####  IF AI IS WHITE, INVERT BOARD
         if player == WHITE:
-            aiboard = aiplayer.invertboard(canonboard)
+            aiboard = aiplayer.invertboard(board)
         else:
-            aiboard = canonboard
+            aiboard = board
         # inputmove = input('enter ai move: ')
         # aimove = tuple(int(char) for char in inputmove)
         aimove = aiplayer.choose_q_action(aiboard, availactions)
-        print(f'---q table returns= {aimove}')
+        # print(f'---q table returns= {aimove}')
         if not aimove:
             '''
             eval act:
             compare all availact outcomes board evaluations,???
             '''
-            aimove = aiplayer.choose_evaluated_action(aiboard, availactions, self)
-            print(f'---evaluated action= {aimove}') 
+            # print(f'---MAKING RANDOM MOVE')
+            aimove = random.choice(list(availactions.items()))
+
+            ####  TODO DISABLED EVALUATION !!!
+
+            # aimove = aiplayer.choose_evaluated_action(aiboard, availactions, self)
+
+            # print(f'---evaluated action= {aimove}') 
         # print(f'---board before ai move ')
         # self.printboard(board)
         #### MAKE AI MOVE
@@ -367,7 +374,7 @@ class Othello():
 class OthelloAI():
     ### AI CAN USE CLASS ATTRIBUTES AS IT WILL NOT BE SERVED/SUBJECT TO REQUESTS
 
-    def __init__(self, alpha=0.5, epsilon=0.1):
+    def __init__(self, alpha=0.5, epsilon=1):
         """
         Initialize AI with an empty Q-learning dictionary,
         an alpha (learning) rate, and an epsilon rate.
@@ -446,7 +453,7 @@ class OthelloAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         # """
-        print(f"+++update_q_value") 
+        # print(f"+++update_q_value") 
         # print(f"---state={state}, action={action}, old_q={old_q}, reward={reward}, future_rewards={future_rewards}")
         if state is None or action is None:
           # print(f"---!!!!!state or action is None")
@@ -465,7 +472,7 @@ class OthelloAI():
         result = round(result, 2)        
         self.q[statetuple, action] = result
         # self.q['arse'] = result
-        print(f"---updated with action {action} self.q = {self.q[statetuple, action]}")
+        # print(f"---updated with action {action} self.q = {self.q[statetuple, action]}")
         
     def best_future_reward(self, state, game_instance):
         """
@@ -534,9 +541,9 @@ class OthelloAI():
        
         # print(f"---CHOOSING EPSILON HERE = {epsilon}")
         x = random.random()
-        print(f"---random x = {x}")
+        # print(f"---random x = {x}")
         if x < self.epsilon:
-            print(f'---EXPLORATION')
+            # print(f'---EXPLORATION')
             action = random.choice(list(availactions))
             # print(f">>>EPs=True : random action= {action}")
         else:
@@ -558,7 +565,7 @@ class OthelloAI():
                 q = self.get_q_value( state, action)
                 
                 if q:
-                    # print(f"---q = {q}")
+                    # print(f"---FOUND Q ACTION IN TABLE!!! = {q}")
                     self.qs_used += 1
                     if q > maxq:
                         #### TODO THIS COULD PICK AN ACTION WITH EQUAL Q USING A PROBABILITY, OTHERWISE IT WILL ALWAYS PICK THE LAST ACTION WITH THE HIGHEST Q
@@ -593,7 +600,7 @@ class OthelloAI():
             # print(f"---action={action}")
             # print(f'---availactions[action]={availactions[action]}')
             eval = self.evaluate_action(state, action,game_instance)
-            print(f"---{action} eval={eval}")
+            # print(f"---{action} eval={eval}")
             if eval > besteval:
                 besteval = eval
                 bestaction = action
@@ -876,7 +883,7 @@ class OthelloAI():
 
     @classmethod
     def load_data(self, filename ):
-        print(f"+++load_data  with {filename}")
+        # print(f"+++load_data  with {filename}")
         with open(f'qtables/{filename}.pickle', 'rb') as f:
             q = pickle.load(f)
             return q
@@ -959,8 +966,50 @@ class OthelloAI():
         return result, transformations
 
       
-        
 
+def plot(trainingdata):    
+    iteration = trainingdata['Iteration']
+    alpha = trainingdata['Alpha']
+    epsilon = trainingdata['Epsilon']
+
+    plt.figure(figsize=(12, 8))
+    # Background color for the entire figure
+    plt.gcf().set_facecolor('black')
+    # Plot training & validation accuracy values
+    
+    # first subplot ////////////////////////////////
+    plt.subplot(2, 2, 1)
+    
+    plt.title('epsilon and alpha', color='white')
+    # Plot epsilon
+    plt.plot(data["Iteration"], data["Epsilon"], label='Epsilon', color='blue')
+    # Plot alpha
+    plt.plot(data["Iteration"], data["Alpha"], label='Alpha', color='red')
+    legend = plt.legend(facecolor='black', edgecolor='white')
+    for text in legend.get_texts():
+        text.set_color("white")
+    plt.tick_params(colors='white')  # Changing tick color to white
+    plt.gca().spines['bottom'].set_color('white')  # Change x-axis line color to white
+    plt.gca().spines['left'].set_color('white')    # Change y-axis line color to white  
+
+    # draw parameters
+    plt.text(0, 0.75, parameters, ha = 'left', va = 'top' ,color='yellow', bbox=dict(boxstyle="round,pad=0.3", fc='black', ec="yellow", lw=1))
+
+
+      # Set the background color for each subplot (axes)
+    for ax in plt.gcf().get_axes():
+        ax.set_facecolor('black')
+
+
+    plt.show()
+    
+    chartname = f"{sys.argv[1]}_{filetime}.png"
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+    chartnamepath = os.path.join('plots', chartname)
+    plt.savefig(chartnamepath)
+    # plt.show()
+    return chartnamepath
 
 def print_q_table(q_table):
     for key, value in q_table.items():
@@ -976,23 +1025,24 @@ def print_q_table(q_table):
         print(f"Q-value: {value}")
         print("-" * 40)  # Separator for readability
 
-
-
-def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testing'):
-    """
-    Train an AI by playing `n` games against itself.
-    """
-    ai = OthelloAI(alpha)
-    # print(f"...q dict={ai.q}")
-  # print(f'...filename= {filename}')
+def train(n,  filename='testing'):
+    ai = OthelloAI()
+    print(f'---ai.epsilon={ai.epsilon}')
+    print(f'---ai.alpha={ai.alpha}')
     maxeval = -float('inf') 
     mineval = float('inf')
-    # print(f'---maxeval={maxeval}')
 
-    def epsilon_decay(iteration, total_iterations, initial_epsilon=2, min_epsilon=0.01,   decay_rate=0.01):
-        # EXPONENTIAL DECAY
+    def epsilon_decay(iteration, total_iterations, initial_epsilon=1, min_epsilon=0.008):
+        # decay_rate = math.log(2)/total_iterations
+        decay_rate = 0.1
         epsilon = min_epsilon + (initial_epsilon - min_epsilon) * math.exp(- decay_rate * iteration)
         return epsilon
+
+    def alpha_decay(iteration, total_iterations, initial_alpha=0.3, min_alpha=0.01):
+        decay_rate = math.log(2)/total_iterations
+        expo = - decay_rate * iteration
+        alpha = min_alpha + (initial_alpha - min_alpha) * math.exp(expo)
+        return alpha
 
     # if file isnt 'testing', check if it exists
     if filename != 'testing':
@@ -1001,15 +1051,21 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
             #### LOAD IT
             ai.q = ai.load_data(filename)
 
-    
-
     # ai0wins = 0
     completed = 0
+    trainingdata = []
     ####      PLAY N GAMES
     for i in range(n):
-        # print(f'---i= {i}, n= {n}, maxeps={maxeps}, mineps={mineps}, decay_rate={decay_rate}')
-        ai.epsilon = epsilon_decay( i+1, n, maxeps, mineps, decay_rate)
-        # print(f'---EPSILON={round(ai.epsilon, 2)}')
+        ai.epsilon = epsilon_decay( i, n)
+        ai.alpha = alpha_decay( i, n)
+        if i % 10 == 0:
+            trainingdata.append({
+            "Iteration": i,
+            "Epsilon": ai.epsilon,
+            "Alpha": ai.alpha
+        })
+        print(f'---EPSILON={round(ai.epsilon, 5)}')
+        print(f'---ALPHA={round(ai.alpha, 5)}')
         print(f"\n>>>>>>>>>>Playing training game {i + 1}")
         game = Othello()
         
@@ -1022,27 +1078,27 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
         moves = 0
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-            print(f'\n>>>MOVE FOR {game.playercolor(game.player)}')
+            # print(f'\n>>>MOVE FOR {game.playercolor(game.player)}')
             moves += 1
             opponent = game.switchplayer(game.player)
-            game.printboard(game.state)
+            # game.printboard(game.state)
     
             canonboard, xform = ai.canonical_board(game.state)
-            print(f'---canonboard:')
-            game.printboard(canonboard)
-            print(f'---xform={xform}')
+            # print(f'---canonboard:')
+            # game.printboard(canonboard)
+            # print(f'---xform={xform}')
     
             ####      CHOOSE ACTION FROM Q TABLE
-            availactions = game.available_actions(game.state, game.player)
+            availactions = game.available_actions(canonboard, game.player)
             # game.printboard(game.state)
             # print(f"...availactions={availactions}")
             if availactions:
                 # print(f'...actions available, choosing from game.aimoves / q table')
-                new_state, action_caps = game.aimoves(game.state, availactions, game.player, ai, epsilon=True)
+                new_state, action_caps = game.aimoves(canonboard, availactions, game.player, ai)
                 # CAPTURES HERE IF NEEDED
                 action = action_caps[0]
             else:
-                    print(f"---no actions")
+                    # print(f"---no actions")
                     game.player = game.switchplayer(game.player)
                     continue
 
@@ -1052,7 +1108,7 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
             # game.printboard(new_state, action)
             
             ####      KEEP TRACK OF LAST STATE (BEFORE MOVE) AND ACTION
-            last[game.player]["state"] = game.state
+            last[game.player]["state"] = canonboard
             last[game.player]["action"] = action
 
             # print(f"/...AFTER MOVEfor player {game.player}")
@@ -1060,8 +1116,9 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
 
             ####      1 CHECK FOR GAME OVER, IF SO UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
-                # print(f"...game over. winner = {game.winner}")
                 game.winner = game.calc_winner(new_state)
+                # print(f"...game over. winner = {game.winner}")
+
            
                 ####     PLAYER WON
                 if game.player == game.winner:
@@ -1102,10 +1159,10 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
             if evaluation < mineval:
                 mineval = evaluation
             ####     UPDATE Q TABLE
-            print(f"---NOW UPDATE Q TABLE")
+            # print(f"---NOW UPDATE Q TABLE")
             # print(f'---action= {action}\n---evaluation= {evaluation}\n ---game= {game}')
-            ai.update(game.state, action, new_state, evaluation, game)
-
+            ai.update(canonboard, action, new_state, evaluation, game)
+            # print(f'---board after move')
             # game.printboard(new_state, action)
 
             ####      SAVE THE NEW STATE
@@ -1121,17 +1178,16 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
         completed += 1
         if completed % 100 == 0:
             print(f"played games = {completed}")
-            print(f'---EPSILON={round(ai.epsilon, 2)}')
 
-            
+    data = pd.DataFrame(trainingdata)   
         # print(f"...q table at end of game = {ai.q}")
     print(f"Done training {completed} games, saved as {filename}.pickle q")
-    print(f'---maxratio={round(ai.maxratio,2)}, minratio={round(ai.minratio,2)}')
-    print(f'---maxeval= {round(maxeval,2)}, minval = {round(mineval,2)}')
     print(f'--length of qtable = {len(ai.q)}')
-    # print(f"...q table = {ai.q}")
+    print(f'---trainingdata= {trainingdata}')
 
     ai.save_data(filename)
+
+    chartpath = plot(data)
 
     ####      RETURN THE TRAINED AI
     return ai
@@ -1160,7 +1216,7 @@ def evaluate(n, testq, benchmarkq=None):
     # print(f'...testai.q={testai.q}')
 
     ####     CALC EVERY OTHER GAME
-    for i in range(n):
+    for i in range(1,n+1):
         game = Othello()
         # every other game, switch starter:
         if i % 2 == 0:
@@ -1177,10 +1233,12 @@ def evaluate(n, testq, benchmarkq=None):
         
         while not game.gameover(game.state):
             # print(f"\n===MOVE ")
+            # MAKE CANONICAL BOARD
+            canonboard, xform = testai.canonical_board(game.state)
             # CALC AVAILABLE ACTIONS
             action = None
             # print(f'...action= {action}')
-            availactions = game.available_actions(game.state, game.player)
+            availactions = game.available_actions(canonboard, game.player)
             # print(f'...availactions for {game.player} = {availactions}')
             # print(f'===before move')
             # game.printboard(game.state)
@@ -1191,22 +1249,20 @@ def evaluate(n, testq, benchmarkq=None):
                 ####    FOR WHOEVER IS PLAYING, CHOOSE AN ACITON
                 if game.player == testai.color:
 
-                    ####    MOVE IS FOR TESTAI
+                    ####    TESTAI MOVE
+
                     # print(f"===TESTAI TO MOVE as {game.playercolor(testai.color)}")
                     # print(f"===game.player= {game.playercolor}  ")
 
                     # print(f'...CHOOSE Q ACTION')
-                    action = testai.choose_q_action(game.state, game.player, availactions, epsilon=False)
-                    
-                    if not action:
-                        # print(f"...choosing evaluated acion")
-                        action = testai.choose_evaluated_action(game.state, game.player, availactions, game)
-                    # print(f"...ai action={action}")
+                    board, action = game.aimoves(canonboard, availactions, game.player, testai)
+                    # print(f'.....>action= {action}')
 
                 else:
                     ####   MOVE IS BENCHMARKAI
+
                     # print(f"=== BENCHMARK TO MOVE as {game.playercolor(benchmarkai.color)} ")
-                    actions = game.available_actions(game.state, game.player)
+                    actions = game.available_actions(canonboard, game.player)
                     # print(f"...actions={actions}")
                     action = None
                     if actions:
@@ -1217,12 +1273,13 @@ def evaluate(n, testq, benchmarkq=None):
                     # action = benchmarkai.choose_q_action(game.state, game.player, game, epsilon=False)
 
                 ####    MAKE THE MOVE IF THERE IS ONE
+
                 # print(f"===action={action}")
                 if action is not None:
                     action = action[0]
                     # print(f'...makeing move with action= {action} on board:')
                     # game.printboard(game.state, action)
-                    newboard = game.move(game.state, action, game.player)
+                    newboard = game.move(canonboard, action, game.player)
                     # print(f"===game state after move")
                     # game.printboard(newboard, action)
                     game.state = newboard
@@ -1232,11 +1289,10 @@ def evaluate(n, testq, benchmarkq=None):
             ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVE
             
             game.player = game.switchplayer(game.player)
-        if i % 50 == 0:
-            print(f"played games = {i}")
+        
         # print(f"...END OF GAME {i+1}")
 
-        ####    CHECK FOR GAME OVER
+        ####   EXITED WHILE LOOP BECAUSE GAME OVER
         # print(f"===game over")
         game.calc_winner(game.state)
         # game.printboard(game.state)
@@ -1251,20 +1307,25 @@ def evaluate(n, testq, benchmarkq=None):
         elif game.winner == None:
             ties += 1
             # print(f"...END OF GAME {i+1} \nTIE. ties={ties}||||||||||||\n")
+        if i % 50 == 0:
+            print(f"PLAYED {i} GAMES")
     
     # win/loss ratio
     if losses == 0:
         winlossratio = 1
     else:
         winlossratio= wins/losses
-    winrate = wins / n  
+    winrate = (wins / n)*100
+    lossrate = (losses / n)*100  
         
     print(f'---q records retrieved= {testai.qs_used}')
     print(f"wins: {wins}, losses: {losses}, ties: {ties}")
-    print(f"win/loss ratio= {round(winlossratio, 2)}:1")
+    
     print(f"winrate= {winrate}")
+    print(f"lossrate= {lossrate}")
+    print(f"win/loss ratio= {round(winlossratio, 2)}:1")
     ### print the q table used
-    print(f"testq= {testq} len={len(testai.q)}")
+    print(f"Qtable= {testq} len={len(testai.q)}")
 
 
 if __name__ == "__main__":

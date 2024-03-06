@@ -1335,6 +1335,8 @@ def evaluate(n, testq, benchmarkq=None):
                 # choose random action
                 random_key = random.choice(list(availactions.keys()))
                 benchmove = availactions[random_key]
+
+                benchmove = random.choice(list(actions.items()))
                 print(f"---benchmove={benchmove}")
                 # make move
                 game.move(canonboard, benchmove(0), game.player)

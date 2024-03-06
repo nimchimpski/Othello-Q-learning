@@ -21,3 +21,5 @@ instance/database.db
 test/__pycache__/test_othello.cpython-310-pytest-7.4.4.pyc
 .vscode/settings.json
 qtables/
+plots/
+instance/

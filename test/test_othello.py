@@ -56,22 +56,12 @@ def test_available_actions():
     # assert game.available_actions(board, 0) == None
    
 
-# def test_generate_2_tuples():
-#     ai = OthelloAI()
-#     assert ai.generate_2_tuples(3) == [((0, 0), (0, 1)), ((0, 1), (0, 2)), ((1, 0), (1, 1)), ((1, 1), (1, 2)), ((2, 0), (2, 1)), ((2, 1), (2, 2))]
 
-def test_generate_all_symetries():
+def test_canonical_move():
     ai = OthelloAI()
-    board = [[1,1,0],
-             [0,0,0],
-             [0,0,0]]
-             
-    assert ai.generate_all_symetries(3) == [board, 
-    [[[1, 1, 0], [0, 0, 0], [0, 0, 0]], 
-    [(0, 0, 1), (0, 0, 1), (0, 0, 0)], 
-    [(0, 0, 0), (0, 0, 0), (0, 1, 1)], 
-    [(0, 0, 0), (1, 0, 0), (1, 0, 0)], 
-    [[0, 0, 0], [0, 0, 0], [1, 1, 0]], 
-    [(0, 0, 0), (0, 0, 1), (0, 0, 1)], 
-    [(0, 1, 1), (0, 0, 0), (0, 0, 0)], 
-    [(1, 0, 0), (1, 0, 0), (0, 0, 0)]]]
+    
+    assert ai.canonical_move(['rotate 270'], (1,4), 6) == (1,1)
+    # assert ai.retranslate_move(['rotate 270'], (0,1), 6) == (4,0)
+
+    assert ai.canonical_move(['rotate 90'], (1,4), 6) == (4,4)
+    # assert ai.retranslate_move(['rotate 90'], (1,4), 6) == (1,1)

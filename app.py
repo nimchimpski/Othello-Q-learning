@@ -226,7 +226,6 @@ def play():
             ####  CHECK FOR MOVES AVAILABLE FOR AI
             availactions = game.available_actions(board, player)
             if  availactions:
-                print(f'---AI MOVES AVAILABLE---')
                 print(f'---ai avail actions= {availactions}')  
 
                 ####     START THE TIMER

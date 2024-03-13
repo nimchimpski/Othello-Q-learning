@@ -4,6 +4,10 @@ import time
 import pickle
 import os
 from copy import deepcopy
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import datetime
 
 EMPTY = 0
 BLACK = 1
@@ -304,26 +308,39 @@ class Othello():
 
     def aimoves(self, board, availactions, player, aiplayer):
         """
-        geta the AI move, returns new board and move 
+        geta the AI move, returns new board and move() 
         """
         # print(f'+++aimoves()')
-        ####  IF AI IS WHITE, INVERT BOARD
-        if player == WHITE:
-            aiboard = aiplayer.invertboard(board)
-        else:
-            aiboard = board
+        # get canonical board and trans
+        # canonboard, trans = aiplayer.canonical_board(board)
+        # self.printboard(canonboard)
+        # trans the availactions
+
+        
+        aiboard = board
         # inputmove = input('enter ai move: ')
         # aimove = tuple(int(char) for char in inputmove)
         aimove = aiplayer.choose_q_action(aiboard, availactions)
-        print(f'---q table returns= {aimove}')
+        # print(f'---q table returns= {aimove}')
         if not aimove:
-            aimove = aiplayer.choose_evaluated_action(aiboard, availactions, self)
-            print(f'---evaluated action= {aimove}') 
+            '''
+            eval act:
+            compare all availact outcomes board evaluations,???
+            '''
+            # print(f'---MAKING RANDOM MOVE')
+            aimove = random.choice(list(availactions.items()))
+
+            ####  TODO DISABLED EVALUATION !!!
+
+            # aimove = aiplayer.choose_evaluated_action(aiboard, availactions, self)
+
+            # print(f'---evaluated action= {aimove}') 
         # print(f'---board before ai move ')
         # self.printboard(board)
         #### MAKE AI MOVE
         board = self.move( board, aimove[0], player )
-
+ 
+        # TODO return the state evaluation
         return board, aimove
 
     def gameover(self, board ):
@@ -369,7 +386,11 @@ class OthelloAI():
         self.epsilon = epsilon
         self.minratio = float('inf')
         self.maxratio = -float('inf')
+        self.numqupdates = 0
+        self.sumdeltaqs = 0
+        self.deltaqaverage = 0
         self.qs_used = 0
+        self.color = None
         
 
     def update(self, old_state, action, new_state, reward, game_instance):
@@ -383,7 +404,6 @@ class OthelloAI():
         # print(f"---old_state={old_state}, action={action}, new_state={new_state}, reward={reward}")
         # print(f'---getting old q value')
         old = self.get_q_value( old_state, action)
-        # print(f'---old q value= {old}')
         best_future = self.best_future_reward(new_state, game_instance)
         self.update_q_value( old_state, action, old, reward, best_future)
         # print(f"---self.q={self.q}")
@@ -433,7 +453,7 @@ class OthelloAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         # """
-        print(f"+++update_q_value") 
+        # print(f"+++update_q_value") 
         # print(f"---state={state}, action={action}, old_q={old_q}, reward={reward}, future_rewards={future_rewards}")
         if state is None or action is None:
           # print(f"---!!!!!state or action is None")
@@ -443,16 +463,20 @@ class OthelloAI():
             old_q = 0
    
         statetuple = self.statetotuple(state)
-     
-        newvalest = reward + future_rewards
+        gamma = 0.9
+        newvalest = reward + (gamma * future_rewards)
         # print(f"---newvalest={newvalest}")
         ####     IF WINNER = PLAYER, REWARD = 1
 
         result = old_q + (self.alpha * (newvalest - old_q))
-        result = round(result, 2)        
         self.q[statetuple, action] = result
-        # self.q['arse'] = result
-        print(f"---updated with action {action} self.q = {self.q[statetuple, action]}")
+        # Calculate update magnitude
+        self.sumdeltaqs += abs(result - old_q)
+        # print(f"---sumdeltaqs={self.sumdeltaqs}")
+        self.numqupdates += 1
+        
+
+        # print(f"---updated with action {action} self.q = {self.q[statetuple, action]}")
         
     def best_future_reward(self, state, game_instance):
         """
@@ -503,10 +527,11 @@ class OthelloAI():
         using 0 for pairs that have no Q-values).
         If `epsilon` is `True`, return None.
         """
-        print(f"+++choose-Q-action")
-        print(f'---epsilon={self.epsilon}')
+        # print(f"+++choose-Q-action")
+        
         # print(f"---availactions={availactions}")
         if not availactions:
+            print(f"---no actions")
             return None
         action = None
         ####  IF ONLY ONE ACTION RETURN IT
@@ -516,15 +541,15 @@ class OthelloAI():
             action = key
             # print(f'---action 1  = {action}')
 
-        # WITH EPSILON TRUE: CHOOSE RANDOM ACTION WITH EPSILON PROB
+        # WITH EPSILON >0 : CHOOSE RANDOM ACTION WITH EPSILON PROB
         
        
         # print(f"---CHOOSING EPSILON HERE = {epsilon}")
         x = random.random()
-        print(f"---random x = {x}")
+        # print(f"---random x = {x}")
+        # print(f'---epsilon={self.epsilon}')
         if x < self.epsilon:
-            exploration = True
-            print(f'---EXPLORATION')
+            # print(f'---EXPLORATION')
             action = random.choice(list(availactions))
             # print(f">>>EPs=True : random action= {action}")
         else:
@@ -545,17 +570,16 @@ class OthelloAI():
                 assert action is not None
                 q = self.get_q_value( state, action)
                 
-                if q:
-                    # print(f"---q = {q}")
+                if q != None:
+                    # print(f"---FOUND {action} with Q IN TABLE = {q}")
                     self.qs_used += 1
                     if q > maxq:
-                        #### TODO THIS COULD PICK AN ACTION WITH EQUAL Q USING A PROBABILITY, OTHERWISE IT WILL ALWAYS PICK THE LAST ACTION WITH THE HIGHEST Q
                         maxq = q
                         bestactions = [action]
                     elif q == maxq:
                         bestactions.append(action)
             if bestactions:
-                # print(f"---bestactions= {bestactions}")
+                print(f"---bestactions= {bestactions}")
                 bestaction_q = random.choice(bestactions)
                 # print(f"---bestcaction_q= {bestaction_q}")
                 action = bestaction_q
@@ -580,8 +604,8 @@ class OthelloAI():
         for action in availactions:
             # print(f"---action={action}")
             # print(f'---availactions[action]={availactions[action]}')
-            eval = self.evaluate_action(state, action, game_instance)
-            # print(f"---eval={eval}")
+            eval = self.evaluate_action(state, action,game_instance)
+            # print(f"---{action} eval={eval}")
             if eval > besteval:
                 besteval = eval
                 bestaction = action
@@ -601,7 +625,6 @@ class OthelloAI():
             ]
         return move in corner_adjacent_positions
 
-
     def is_edge_adjacent(self, board, move, last_index):
         # print(f'--move= {move}')
         # Check adjacent to vertical edges and not at corners
@@ -619,7 +642,6 @@ class OthelloAI():
                 return True
 
         return False
-
 
     def is_corner(self,move, last_index):
         return move in [(0, 0), (0, last_index), (last_index, 0), (last_index, last_index)]
@@ -796,6 +818,9 @@ class OthelloAI():
         return val
     
     def evaluate_action(self, state, action, game_instance):
+        '''
+
+        '''
         # print(f"+++evaluate_action()")
         val = 0
         last_index = game_instance.size - 1
@@ -808,22 +833,24 @@ class OthelloAI():
             if not self.connects_to_corner(action, game_instance.state):
                 # print(f"--- action next to corner ")
                 val = -0.9
-        elif self.connects_to_corner(action, game_instance.state):
+            elif self.connects_to_corner(action, game_instance.state):
                 # print(f"--- action connects to corner ")
                 val = 0.6
 
         
         # IF ON EDGE BUT NOT CORNER ADJACENT AND NOT CONNECTED TO CORNER
-        elif self.is_edge(action, last_index) and not self.is_corner_adjacent(action, last_index) and not self.connects_to_corner(action, game_instance.state,  ):
-            # print(f"---action on edge")
-            val = 0.3
-        # IF ON EDGE AND CONNECTED TO CORNER 
-        elif self.is_edge(action, last_index) and self.connects_to_corner(action, game_instance.state,  ):
-            # print(f"---action connected to corner")
-            val = 0.4
-        elif self.is_edge(action, last_index) and self.is_corner_adjacent(action, last_index):
-            # print(f"---action corner adjacent")
-            val = -0.3
+        elif self.is_edge(action, last_index):
+            if  self.is_corner_adjacent(action, last_index) and not self.connects_to_corner(action, game_instance.state,  ):
+                print(f"---{action} doesnt connet to corner???")
+                # print(f"---action on edge")
+                val = 0.3
+            # IF ON EDGE AND CONNECTED TO CORNER 
+            elif  self.connects_to_corner(action, game_instance.state,  ):
+                # print(f"---action connected to corner")
+                val = 0.5
+            elif self.is_corner_adjacent(action, last_index):
+                # print(f"---action corner adjacent")
+                val = -0.5
         # IF EDGE ADJACENT
         elif self.is_edge_adjacent(state, action, last_index) and not self.is_corner_adjacent(action, last_index):
             # print(f"---action edge adjacent")
@@ -853,7 +880,6 @@ class OthelloAI():
                 elif copyboard[i][j] == -1:
                     copyboard[i][j] = 1
         return copyboard
-      
     
     def save_data(self, filename):
         with open(f'qtables/{filename}.pickle', 'wb') as f:
@@ -862,11 +888,285 @@ class OthelloAI():
 
     @classmethod
     def load_data(self, filename ):
-        print(f"+++load_data  with {filename}")
+        # print(f"+++load_data  with {filename}")
         with open(f'qtables/{filename}.pickle', 'rb') as f:
             q = pickle.load(f)
             return q
  
+    def evalweights(self, board):
+        print(f"+++evalweights()")
+        board = np.array(board)
+        weights = np.array([
+            [1, -0.25, 0.1,  0.1, -0.25, 1],
+            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
+            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
+            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
+            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
+            [1, -0.25, 0.1,  0.1, -0.25, 1]
+        ])
+
+        # Element-wise multiplication followed by sum
+        result = np.sum(board * weights)
+        return result
+
+    def generate_2_tuples(self, board_size):
+        tuples_list = []
+        for k in range (1,10):
+            for i in range(board_size):
+                for j in range(board_size):
+                    if j < board_size - 1:  # Horizontal tuples
+                        tuples_list.append(((i, j), (i, j + 1),k))
+                    if i < board_size - 1:  # Vertical tuples
+                        tuples_list.append(((i, j), (i + 1, j),k))
+                    if i < board_size - 1 and j < board_size - 1:  # Diagonal right-down
+                        tuples_list.append(((i, j), (i + 1, j + 1),k))
+                    if i < board_size - 1 and j > 0:  # Diagonal left-down
+                        tuples_list.append(((i, j), (i + 1, j - 1),k))
+        # print(f"---tuples_list={tuples_list}")
+        return tuples_list
+
+
+    ### CANONICAL BOARD REPRESENTATION
+
+    def rotate_board(self,board):
+        """Rotate the board 90 degrees clockwise."""
+        return [list(row) for row in zip(*board[::-1])]
+
+    def reflect_board(self,board):
+        """Reflect the board horizontally."""
+        return [row[::-1] for row in board]
+
+    # def symmetries_with_xforms//////(self,board):
+    #     # Initial board with no transformations
+    #     rotations = [(board, ["none"])]
+    #     # Generate rotations
+    #     for i in range(1, 4):
+    #         new_rotation = self.rotate_board(rotations[-1][0])
+    #         rotations.append((new_rotation, [f"rotate {90 * i}"]))
+
+    #     reflections = []
+    #     # Generate reflections for original and each rotation
+    #     for rot, trans in rotations:
+    #         new_reflection = self.reflect_board(rot)
+    #         # If initial transformation was "none", replace with "reflect horizontally"
+    #         if trans == ["none"]:
+    #             reflections.append((new_reflection, ["reflect horizontally"]))
+    #         else:
+    #             reflections.append((new_reflection, trans + ["reflect horizontally"]))
+
+    #     return rotations + reflections
+
+    def symmetries_with_xforms(self, board):
+        # Initial board with no transformations
+        rotations = [(board, ["none"])]
+
+        # Generate rotations
+        for i in range(1, 4):
+            new_rotation = self.rotate_board(rotations[-1][0])
+            rotations.append((new_rotation, [f"rotate {90 * i}"]))
+
+        reflections = []
+        # Generate reflections for original and each rotation
+        for rot, trans in rotations:
+            new_reflection = self.reflect_board(rot)
+
+            # Determine correct reflection label based on rotation before reflection
+            if "rotate 90" in trans or "rotate 270" in trans:
+                # A "horizontal" reflection becomes vertical after a 90 or 270-degree rotation
+                reflection_label = "reflect vertically"
+            else:
+                # Otherwise, it's a horizontal reflection
+                reflection_label = "reflect horizontally"
+
+            # If initial transformation was "none", just use the determined reflection label
+            if trans == ["none"]:
+                reflections.append((new_reflection, [reflection_label]))
+            else:
+                reflections.append((new_reflection, trans + [reflection_label]))
+
+        return rotations + reflections
+
+    def determine_actual_reflection(trans):
+        """
+        This function would be used if we were dynamically determining the reflection type
+        based on the transformations list. It's integrated into the solution above with an
+        if-else construct.
+        """
+        pass
+
+    
+    def canonical_board(self,board):
+        symmetries = self.symmetries_with_xforms(board)
+        # print(f"---symmetries= {symmetries}")
+        # Flatten boards for comparison and keep transformations
+        flatsyms = [([element for row in sym[0] for element in row], sym[1]) for sym in symmetries]
+
+        # Find the lexicographically smallest board and its transformation history
+        lexicographically_smallest, transformations = min(flatsyms, key=lambda x: x[0])
+
+        # Reconstruct the 2D list from the flattened version
+        board_size = len(board)
+        result = [lexicographically_smallest[i:i + board_size] for i in range(0, len(lexicographically_smallest), board_size)]
+        # if transformations is none return None
+        if transformations == ["none"]:
+            transformations = None
+        return result, transformations
+
+    def canonical_move(self, xform, move, size):
+        """
+        Translate the move to the canonical board position
+        """
+        # print(f"+++rcanonical_move()")
+        # print(f'---original move= {move}')
+        # print(f'---xform= {xform}')
+        # print(f'---size= {size}')
+        if not xform:
+                return move
+        for xs in xform:
+            # print(f'\n---move b4 xform= {move}') 
+            # print(f'---this xform= {xs}')  
+            
+            if xs == "reflect horizontally":
+                move = (move[0], size - 1 - move[1])
+                # print(f'---xform= reflect horizontally= {move}')
+            elif xs == "rotate 90":
+                # move = (size - 1 - move[1], move[0])
+                move = (move[1], size - 1 - move[0])
+
+                # print(f'---xform= rotate 90 = {move}')
+            elif xs == "rotate 180":
+                move = (size - 1 - move[0], size - 1 - move[1])
+                # print(f'---xform= 180 = {move}')
+            elif xs == "rotate 270":
+                move = ( size - 1 - move[1], move[0])
+                
+
+                # print(f'---xform= 270= {move}')
+            elif xs == "reflect vertically":   
+                move = (move[0],size - 1 - move[1],)
+                # print(f'---xform= reflect vertically= {move}')
+            
+        # print(f'---canonical move= {move}')
+        return move
+    
+    def retranslate_move(self, xform, move, size):
+        """
+        Retranslate the move to the original board position
+        """
+        print(f"+++retranslate_move()")
+        print(f'---original move= {move}')
+        print(f'---xform= {xform}')
+        # print(f'---size= {size}')
+        if not xform:
+                return move
+        for xs in reversed(xform):
+            print(f'\n---move b4 xform= {move}') 
+            print(f'---this xform= {xs}')  
+            
+            if xs == "reflect horizontally":
+                move = (move[0], size - 1 - move[1])
+                print(f'---xform= reflect horizontally= {move}')
+            elif xs == "rotate 90":
+                move = (size - 1 - move[1], move[0])
+                print(f'---xform= rotate 90 = {move}')
+            elif xs == "rotate 180":
+                move = (size - 1 - move[0], size - 1 - move[1])
+                print(f'---xform= 180 = {move}')
+            elif xs == "rotate 270":
+                move = ( size - 1 - move[0], move[1])
+                print(f'---xform= 270= {move}')
+            
+        print(f'---retranslated move= {move}')
+        return move
+
+    # function ot turn canonical board back to original
+    def retranslate_board(self, xform, board):
+        """
+        Retranslate the board to the original board position
+        """
+        if xform == "none":
+            return board
+        elif xform == "reflect horizontally":
+            return self.reflect_board(board)
+        elif xform == "rotate 90":
+            return self.rotate_board(self.rotate_board(self.rotate_board(board)))
+        elif xform == "rotate 180":
+            return self.rotate_board(self.rotate_board(board))
+        elif xform == "rotate 270":
+            return self.rotate_board(board)
+
+# def plot(data):    
+#     filetime=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+#     iteration = data['Iteration']
+#     alpha = data['Alpha']
+#     epsilon = data['Epsilon']
+#     deltaq = data['Deltaq']
+
+#     plt.figure(figsize=(12, 8))
+#     # Background color for the entire figure
+#     plt.gcf().set_facecolor('black')
+#     # Plot training & validation accuracy values
+    
+#     # first subplot ////////////////////////////////
+#     plt.subplot(2, 2, 1)
+    
+#     plt.title('epsilon and alpha', color='white')
+#     # Plot epsilon
+#     plt.plot(data["Iteration"], data["Epsilon"], label='Epsilon', color='blue')
+#     # Plot alpha
+#     plt.plot(data["Iteration"], data["Alpha"], label='Alpha', color='red')
+#     # Plot delta Q
+#     plt.plot(data["Iteration"], data["Deltaq"], label='Delta Q', color='green')
+#     legend = plt.legend(facecolor='black', edgecolor='white')
+#     for text in legend.get_texts():
+#         text.set_color("white")
+#     plt.tick_params(colors='white')  # Changing tick color to white
+#     plt.gca().spines['bottom'].set_color('white')  # Change x-axis line color to white
+#     plt.gca().spines['left'].set_color('white')    # Change y-axis line color to white  
+
+#       # Set the background color for each subplot (axes)
+#     for ax in plt.gcf().get_axes():
+#         ax.set_facecolor('black')
+    
+    
+#     chartname = f"{filetime}.png"
+#     if not os.path.exists('plots'):
+#         os.makedirs('plots')
+#     chartnamepath = os.path.join('plots', chartname)
+#     plt.savefig(chartnamepath)
+#     plt.show()
+#     return chartnamepath
+
+def plot(data):
+    filetime=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    iteration = data['Iteration']
+    alpha = data['Alpha']
+    epsilon = data['Epsilon']
+    deltaq = data['Deltaq']
+
+    # Creating the plot
+    fig, ax1 = plt.subplots()
+
+    # Plotting epsilon and alpha on the primary y-axis
+    ax1.set_xlabel('games')
+    ax1.set_ylabel('Epsilon and Alpha', color='tab:blue')
+    ax1.plot(iteration, epsilon, label='Epsilon', color='tab:orange')
+    ax1.plot(iteration, alpha, label='Alpha', color='tab:blue')
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+    # Creating a secondary y-axis for delta Q
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Delta Q Average / 100 Games', color='tab:red')
+    ax2.plot(iteration, deltaq, label='Delta Q', color='tab:green')
+    ax2.tick_params(axis='y', labelcolor='tab:red')
+
+    chartname = f"{filetime}.png"
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+    chartnamepath = os.path.join('plots', chartname)
+    plt.savefig(chartnamepath)
+    plt.show()
+    return chartnamepath
 
 def print_q_table(q_table):
     for key, value in q_table.items():
@@ -882,25 +1182,22 @@ def print_q_table(q_table):
         print(f"Q-value: {value}")
         print("-" * 40)  # Separator for readability
 
-
-
-def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testing'):
-    """
-    Train an AI by playing `n` games against itself.
-    """
-    ai = OthelloAI(alpha)
-    # print(f"...q dict={ai.q}")
-  # print(f'...filename= {filename}')
+def train(n,  filename='testing'):
+    ai = OthelloAI(epsilon=0.008, alpha=1)
+    
     maxeval = -float('inf') 
     mineval = float('inf')
-    # print(f'---maxeval={maxeval}')
 
-    def epsilon_decay(iteration, total_iterations, initial_epsilon=2, min_epsilon=0.01,   decay_rate=0.01):
-        
-        # EXPONENTIAL DECAY
+    def epsilon_decay(iteration, total_iterations, initial_epsilon=0.1, min_epsilon=0.1):
+        decay_rate = math.log(2)/total_iterations
         epsilon = min_epsilon + (initial_epsilon - min_epsilon) * math.exp(- decay_rate * iteration)
-
         return epsilon
+
+    def alpha_decay(iteration, total_iterations, initial_alpha=0.3, min_alpha=0.3):
+        decay_rate = math.log(2)/total_iterations
+        expo = - decay_rate * iteration
+        alpha = min_alpha + (initial_alpha - min_alpha) * math.exp(expo)
+        return alpha
 
     # if file isnt 'testing', check if it exists
     if filename != 'testing':
@@ -913,12 +1210,28 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
 
     # ai0wins = 0
     completed = 0
+    trainingdata = []
     ####      PLAY N GAMES
     for i in range(n):
-        # print(f'---i= {i}, n= {n}, maxeps={maxeps}, mineps={mineps}, decay_rate={decay_rate}')
-        ai.epsilon = epsilon_decay( i+1, n, maxeps, mineps, decay_rate)
-        print(f'---EPSILON={round(ai.epsilon, 2)}')
-        print(f"\n>>>>>>>>>>Playing training game {i + 1}")
+        if i % 100 == 0:
+            ai.deltaqaverage = ai.deltaqaverage/100
+            print(f"\n>>>>>>>>>>Playing training game {i}")
+            print(f'---ai.epsilon= {ai.epsilon:.5f}')
+            print(f'---ai.alpha= {ai.alpha:.5f}')
+
+            
+            print(f'---deltaq average/100 games= {ai.deltaqaverage:.5f}')
+            trainingdata.append({
+            "Iteration": i,
+            "Epsilon": ai.epsilon,
+            "Alpha": ai.alpha,
+            "Deltaq": ai.deltaqaverage,
+        })
+            ai.deltaqaverage = 0
+        # ai.epsilon = epsilon_decay(i, n)
+        ai.epsilon = epsilon_decay(i, n)
+        ai.alpha = alpha_decay(i, n)
+        # print(f"\n>>>>>>>>>>Playing training game {i + 1}")
         game = Othello()
         
         ####      Keep track of last move made by either player
@@ -930,41 +1243,55 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
         moves = 0
         ####      GAME LOOP PLAYS 1 GAME
         while True:
-            print(f'\n>>>MOVE FOR {game.playercolor(game.player)}')
+            # print(f'\n>>>MOVE FOR {game.playercolor(game.player)}')
             moves += 1
             opponent = game.switchplayer(game.player)
+            # game.printboard(game.state)
     
+            ####      CANONIZE BOARD
+            canonboard, xform = ai.canonical_board(game.state)
+            # print(f'---canonboard:')
+            # game.printboard(canonboard)
+            # print(f'---xform={xform}')
+
+            ####  IF AI IS WHITE, INVERT BOARD
+            if game.player == WHITE:
+                    canonboard = ai.invertboard(canonboard)
+                    # print(f'---game.player= {game.player}')    
+                    # print(f"---inverted board for white player")
+                    # game.printboard(canonboard)
+
             ####      CHOOSE ACTION FROM Q TABLE
-            availactions = game.available_actions(game.state, game.player)
+            availactions = game.available_actions(canonboard, BLACK)
             # game.printboard(game.state)
             # print(f"...availactions={availactions}")
             if availactions:
                 # print(f'...actions available, choosing from game.aimoves / q table')
-                new_state, action_caps = game.aimoves(game.state, availactions, game.player, ai, epsilon=True)
+                new_state, action_caps = game.aimoves(canonboard, availactions, BLACK, ai)
                 # CAPTURES HERE IF NEEDED
                 action = action_caps[0]
             else:
-                    print(f"---no actions")
+                    # print(f"---no actions")
                     game.player = game.switchplayer(game.player)
                     continue
 
-            
-            
             # print(f"...action just chosen ={action} ")
             # game.printboard(new_state, action)
             
             ####      KEEP TRACK OF LAST STATE (BEFORE MOVE) AND ACTION
-            last[game.player]["state"] = game.state
+            last[game.player]["state"] = canonboard
             last[game.player]["action"] = action
+
+    
 
             # print(f"/...AFTER MOVEfor player {game.player}")
             # game.printboard(new_state)
 
-            ####      1 CHECK FOR GAME OVER, UPDATE Q VALUES WITH REWARDS
+            ####      1 CHECK FOR GAME OVER, IF SO UPDATE Q VALUES WITH REWARDS
             if game.gameover(new_state):
-                # print(f"...game over. winner = {game.winner}")
                 game.winner = game.calc_winner(new_state)
-           
+                # print(f"...game over. winner = {game.winner}")
+            
                 ####     PLAYER WON
                 if game.player == game.winner:
                     # print(f"...winning move for {game.playercolor(game.player)}={last[game.player]['action']}")
@@ -989,25 +1316,33 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
                     ai.update(last[BLACK]["state"], last[BLACK]["action"], game.state,  0, game, game.player) 
                     ai.update( last[WHITE]["state"], last[WHITE]["action"], game.state, 0, game, opponent)
 
-                    #### UPDATE DOES NOT NEED PLAYER ARG !!!!!
-
+                    
+                ai.deltaqaverage = ai.deltaqaverage + (ai.sumdeltaqs/ai.numqupdates)
+                # print(f"---end game deltaqaverage={ai.deltaqaverage}")
+                ai.sumdeltaqs = 0
+                ai.numqupdates = 0
                 break
 
             ####      2 IF GAME NOT OVER, UPDATE Q VALUES WITH REWARDS
-
+            # Q(s,a)←Q(s,a)+α[r+γmaxa′​Q(s′,a′)−Q(s,a)]
             ####  EVALUATE BOARD
             # print(f"\n---evaluate board")
-            evaluation = ai.evaluate_board(new_state, game)
-            # print(f"---evaluation= {round(evaluation,2)}")
-            if evaluation > maxeval:
-                maxeval = evaluation
-            if evaluation < mineval:
-                mineval = evaluation
-            ####     UPDATE Q TABLE
-            print(f"---NOW UPDATE Q TABLE")
-            # print(f'---action= {action}\n---evaluation= {evaluation}\n ---game= {game}')
-            ai.update(game.state, action, new_state, evaluation, game)
 
+            # evaluation = ai.evaluate_board(new_state, game)
+
+            # print(f"---evaluation= {round(evaluation,2)}")
+            # if evaluation > maxeval:
+            #     maxeval = evaluation
+            # if evaluation < mineval:
+            #     mineval = evaluation
+            ####     UPDATE Q TABLE
+            # print(f"---NOW UPDATE Q TABLE WITH ZERO REWARD")
+            #### UPDATE DOES NOT NEED PLAYER ARG !!!!!
+            # print(f'---action= {action}\n---evaluation= {evaluation}\n ---game= {game}')
+
+            ai.update(canonboard, action, new_state, 0, game)
+
+            # print(f'---board after move')
             # game.printboard(new_state, action)
 
             ####      SAVE THE NEW STATE
@@ -1017,38 +1352,35 @@ def train(n, alpha=0.5, maxeps=2, mineps=0.01, decay_rate=0.01, filename='testin
             # print(f"...switch player")
             game.player = game.switchplayer( game.player)
             # print(f"...player after switching={game.player}\n")
-            # if moves == 100:
+            # if moves == 4:
             #     break
 
         completed += 1
-        if completed % 100 == 0:
-            print(f"played games = {completed}")
-            print(f'---EPSILON={round(ai.epsilon, 2)}')
-
+        # if completed % 100 == 0:
+        #     print(f"played games = {completed}")
             
-        # print(f"...q table at end of game = {ai.q}")
-    print(f"Done training {completed} games, saved as {filename}.pickle q")
-    print(f'---maxratio={round(ai.maxratio,2)}, minratio={round(ai.minratio,2)}')
-    print(f'---maxeval= {round(maxeval,2)}, minval = {round(mineval,2)}')
-    print(f'--length of qtable = {len(ai.q)}')
-    # print(f"...q table = {ai.q}")
+
+    data = pd.DataFrame(trainingdata)   
+    print(f"Done training {completed} games")
+    print(f'--qtable: {filename} len= {len(ai.q)}')
+    # print(f'---trainingdata= {trainingdata}')
 
     ai.save_data(filename)
+
+    chartpath = plot(data)
 
     ####      RETURN THE TRAINED AI
     return ai
 
 
 
-def evaluate(n, testq, benchmarkq=None):
+def evaluate(n, qtable, benchmarkq=None):
     """
     Evaluate the performance of `ai` against `benchmarkai` by playing `n` games.
     """
-    
-       
-    testai = OthelloAI()
+    testai = OthelloAI(epsilon=0, alpha=0)  
 
-    testai.q = testai.load_data(testq)
+    testai.q = testai.load_data(qtable)
     benchmarkai = OthelloAI()
     if benchmarkq:
         benchmarkai.q = benchmarkai.load_data(benchmarkq)
@@ -1059,10 +1391,11 @@ def evaluate(n, testq, benchmarkq=None):
     ties = 0
     qs_used = 0
 
-    # print(f'...testai.q={testai.q}')
-
     ####     CALC EVERY OTHER GAME
     for i in range(n):
+        print(f"\nPLAYING EVALUATION GAME {i+1}")
+        
+
         game = Othello()
         # every other game, switch starter:
         if i % 2 == 0:
@@ -1073,72 +1406,112 @@ def evaluate(n, testq, benchmarkq=None):
             # print(f'...i= {i} is odd')
             testai.color = WHITE
             benchmarkai.color = BLACK
-        # print(f"\nPLAYING EVALUATION GAME {i + 1}\n")
-
+        # print(f'---testai.color= {game.playercolor(testai.color)}')
         # game.printboard(game.state)
         
         while not game.gameover(game.state):
-            # print(f"\n===MOVE ")
-            # CALC AVAILABLE ACTIONS
-            action = None
-            # print(f'...action= {action}')
-            availactions = game.available_actions(game.state, game.player)
-            # print(f'...availactions for {game.player} = {availactions}')
-            # print(f'===before move')
-            # game.printboard(game.state)
+            if game.player == testai.color:
+                actor = 'testai'
+            else:
+                actor = 'benchmarkai'
+            print(f"==={game.playercolor(game.player)} to MOVE as {actor} ")
+            # MAKE CANONICAL BOARD
+            canonboard, xform = testai.canonical_board(game.state)
+            # game.printboard(canonboard) 
+            # print(f'---xform={xform}')
 
-            ####   ONLY PLAY IF THERE ARE AVAILABLE ACTIONS
-            if availactions:
-
-                ####    FOR WHOEVER IS PLAYING, CHOOSE AN ACITON
-                if game.player == testai.color:
-
-                    ####    MOVE IS FOR TESTAI
-                    # print(f"===TESTAI TO MOVE as {game.playercolor(testai.color)}")
-                    # print(f"===game.player= {game.playercolor}  ")
-
-                    # print(f'...CHOOSE Q ACTION')
-                    action = testai.choose_q_action(game.state, game.player, availactions, epsilon=False)
+            ####    IF AI TO MOVE
+            if game.player == testai.color:
+                # print(f'--- AI to play as {game.playercolor(game.player)}')
+                ####   IF AI IS WHITE, INVERT BOARD
+                if game.player == WHITE == testai.color:
+                    # print(f'---game.player=WHITE=testai.color= {game.player == WHITE == testai.color}')
+                    canonboard = testai.invertboard(canonboard)
+                    # CACONICALIZE
+                    canonboard, xform = testai.canonical_board(canonboard)
+                    # print(f'---xform={xform}')
+                    # AVAILS FOR INVERTED BOARD
+                    availactions = game.available_actions(canonboard, BLACK)
+                    # CHECK IF THERE ARE ANY ACTIONS
+                    if not availactions:
+                        # print(f"---no actions available for testai")
+                        game.player = game.switchplayer(game.player)
+                        continue
+                    # MAKE MOVE
+                    newboard, aimove = game.aimoves(canonboard, availactions, BLACK, testai)
+                    # RE-INVERT BOARD
+                    newboard = testai.invertboard(newboard)
+                    lastmove = aimove[0]
+                    # print(f"---aimove as WHITE= {lastmove}")
+                    # RE-CANONICALIZE
+                    newboard, xform = testai.canonical_board(newboard)
+                    # print(f'---xform={xform}')
                     
-                    if not action:
-                        # print(f"...choosing evaluated acion")
-                        action = testai.choose_evaluated_action(game.state, game.player, availactions, game)
-                    # print(f"...ai action={action}")
+                    # CANONICALIZE MOVE
+                    lastmove = testai.canonical_move(xform, lastmove, game.size)
+                    # print(f'---lastmove after canonicalize= {lastmove}')
+                    # print(f'---newboard after move+canonize')
+                    # game.printboard(newboard, lastmove=lastmove)
+                elif game.player == BLACK == testai.color:
+                    # print(f'---game.player=BLACK=testai.color= {game.player == BLACK == testai.color}')
+                    availactions = game.available_actions(canonboard, game.player)
+                    # CHECK IF THERE ARE ANY ACTIONS
+                    if not availactions:
+                        # print(f"---no actions available for testai")
+                        game.player = game.switchplayer(game.player)
+                        continue
+                    # MAKE MOVE
+                    newboard, aimove = game.aimoves(canonboard, availactions, game.player, testai)
+                    # print(f"---aimove as BLACK= {aimove}")
+                    # print(f"---newboard after move")
+                    # game.printboard(newboard, lastmove=aimove[0])
+                    lastmove = aimove[0]
 
-                else:
-                    ####   MOVE IS BENCHMARKAI
-                    # print(f"=== BENCHMARK TO MOVE as {game.playercolor(benchmarkai.color)} ")
-                    actions = game.available_actions(game.state, game.player)
-                    # print(f"...actions={actions}")
-                    action = None
-                    if actions:
-                        randomaction = random.choice(list(actions.items()))
-                        # print(f"...random action={randomaction}")
-                        action = randomaction
-                    # print(f"...bench action={action}")
-                    # action = benchmarkai.choose_q_action(game.state, game.player, game, epsilon=False)
+            #### BENCHMARK TO MOVE
+            elif game.player == benchmarkai.color:
+                # print(f'---benchmarkai is {game.playercolor(benchmarkai.color)}, to play as {game.playercolor(game.player)}')
+                availactions = game.available_actions(canonboard, game.player)
 
-                ####    MAKE THE MOVE IF THERE IS ONE
-                # print(f"===action={action}")
-                if action is not None:
-                    action = action[0]
-                    # print(f'...makeing move with action= {action} on board:')
-                    # game.printboard(game.state, action)
-                    newboard = game.move(game.state, action, game.player)
-                    # print(f"===game state after move")
-                    # game.printboard(newboard, action)
-                    game.state = newboard
-                else:
-                    print(f"...no action!!!!!!!")
+                # CHECK IF THERE ARE ANY ACTIONS
+                if not availactions:
+                    # print(f"---no actions available for benchmarkai")
+                    game.player = game.switchplayer(game.player)
+                    continue
+                # print(f"---availactions={availactions}")
+
+                # CHOOSE RANDOM ACTION
+                random_key = random.choice(list(availactions.keys()))
+                benchmove = availactions[random_key]
+
+                benchmove = random.choice(list(availactions.items()))
+                # print(f"---benchmove={benchmove}")
                 
-            ####     OTHERWISE SEE IF THE OTHER PLAYER CAN MOVE
+                # MAKE MOVE
+                newboard = game.move(canonboard, benchmove[0], game.player)
+                lastmove = benchmove[0]
+            
+            ####     SAVE THE NEW STATE
+
+            # RE-CANONICALIZE
+            # print(f'---end board b4 canonicalize')
+            # game.printboard(newboard, lastmove=lastmove)
+            newboard, xform = testai.canonical_board(newboard)
+            # print(f'---applied xform= {xform}')
+            # CANONICALIZE MOVE
+
+            if xform:
+                # print(f'---xform is true')
+                lastmove = testai.canonical_move(xform, lastmove, game.size)
+            # SAVE
+            # print(f'---board to save after canonicalize')
+            # game.printboard(newboard, lastmove=lastmove)
+            game.state = newboard
             
             game.player = game.switchplayer(game.player)
-        if i % 50 == 0:
-            print(f"played games = {i}")
-        # print(f"...END OF GAME {i+1}")
+            # break
 
-        ####    CHECK FOR GAME OVER
+        ####   EXITED WHILE LOOP BECAUSE GAME OVER
+
         # print(f"===game over")
         game.calc_winner(game.state)
         # game.printboard(game.state)
@@ -1153,20 +1526,25 @@ def evaluate(n, testq, benchmarkq=None):
         elif game.winner == None:
             ties += 1
             # print(f"...END OF GAME {i+1} \nTIE. ties={ties}||||||||||||\n")
+        if i % 50 == 0:
+            print(f"PLAYED {i} GAMES")
     
     # win/loss ratio
     if losses == 0:
         winlossratio = 1
     else:
         winlossratio= wins/losses
-    winrate = wins / n  
+    winrate = (wins / n)*100
+    lossrate = (losses / n)*100  
         
     print(f'---q records retrieved= {testai.qs_used}')
     print(f"wins: {wins}, losses: {losses}, ties: {ties}")
-    print(f"win/loss ratio= {round(winlossratio, 2)}:1")
+    
     print(f"winrate= {winrate}")
+    print(f"lossrate= {lossrate}")
+    print(f"win/loss ratio= {round(winlossratio, 2)}:1")
     ### print the q table used
-    print(f"testq= {testq} len={len(testai.q)}")
+    print(f"Qtable= {qtable} len={len(testai.q)}")
 
 
 if __name__ == "__main__":

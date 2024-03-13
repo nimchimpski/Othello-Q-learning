@@ -569,21 +569,17 @@ class OthelloAI():
             for action in availactions:
                 assert action is not None
                 q = self.get_q_value( state, action)
-                if q != None and q > 0:
-                    
-                    print(f"---q = {q}")
                 
                 if q != None:
-                    # print(f"---FOUND Q ACTION IN TABLE!!! = {q}")
+                    # print(f"---FOUND {action} with Q IN TABLE = {q}")
                     self.qs_used += 1
                     if q > maxq:
-                        #### TODO THIS COULD PICK AN ACTION WITH EQUAL Q USING A PROBABILITY, OTHERWISE IT WILL ALWAYS PICK THE LAST ACTION WITH THE HIGHEST Q
                         maxq = q
                         bestactions = [action]
                     elif q == maxq:
                         bestactions.append(action)
             if bestactions:
-                # print(f"---bestactions= {bestactions}")
+                print(f"---bestactions= {bestactions}")
                 bestaction_q = random.choice(bestactions)
                 # print(f"---bestcaction_q= {bestaction_q}")
                 action = bestaction_q
@@ -1395,7 +1391,7 @@ def evaluate(n, qtable, benchmarkq=None):
 
     ####     CALC EVERY OTHER GAME
     for i in range(n):
-        # print(f"\nPLAYING EVALUATION GAME {i+1}")
+        print(f"\nPLAYING EVALUATION GAME {i+1}")
         
 
         game = Othello()

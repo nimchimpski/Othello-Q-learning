@@ -408,6 +408,7 @@ class OthelloAI():
         self.update_q_value( old_state, action, old, reward, best_future)
         # print(f"---self.q={self.q}")
 
+    # TODO toN 
     def get_q_value(self, state, action):
         """
         Return the Q-value for the state `state` and the action `action`.
@@ -436,6 +437,7 @@ class OthelloAI():
     def statetotuple(self, state):
         return tuple(tuple(row) for row in state)
 
+    # TODO toN
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
         Update the Q-value for the state `state` and the action `action`
@@ -478,6 +480,7 @@ class OthelloAI():
 
         # print(f"---updated with action {action} self.q = {self.q[statetuple, action]}")
         
+    # TODO toN
     def best_future_reward(self, state, game_instance):
         """
         Given a state `state`, consider all possible `(state, action)`
@@ -519,6 +522,7 @@ class OthelloAI():
 
         # get max of the q values
 
+    # TODO toN
     def choose_q_action(self, state, availactions):
         """
         Given a state `state`, return an action `(i, j)` to take.
@@ -882,14 +886,47 @@ class OthelloAI():
         return copyboard
     
     def save_data(self, filename):
-        with open(f'qtables/{filename}.pickle', 'wb') as f:
+        with open(f'QNtables/{filename}.pickle', 'wb') as f:
             # print(f"+++saving qtable: {self.q}")
             pickle.dump(self.q, f)
+
+    def maketuples(self, size):
+
+        def rotate90():
+            ...
+
+        def rotate180():
+            ...
+
+        def reflect180():
+            ...
+
+        def indexcalc(i,j):
+            index =i * 3^1 + j * 3^0
+            ...
+
+        ntuples = {}
+        # ntuples['((0,0),(0,1)),']
+    
+
+        for i in range(size):
+            for j in range(size):
+                if j < size - 1:    # Horizontal tuples
+                    for k in range(9):
+                        ntuples[((i,j), (i,j+1)),k] = 0
+                if i < size - 1:    # Vertical tuples
+                    ntuples[((i,j), (i+1,j))] = 1
+                if i < size - 1 and j < size - 1:    # Diagonal right-down
+                    ntuples[((i,j), (i+1,j+1))] = 2
+                if i < size - 1 and j > 0:    # Diagonal left-down
+                    ntuples[((i,j), (i+1,j-1))] = 3
+
+        return ntuples
 
     @classmethod
     def load_data(self, filename ):
         # print(f"+++load_data  with {filename}")
-        with open(f'qtables/{filename}.pickle', 'rb') as f:
+        with open(f'QNtables/{filename}.pickle', 'rb') as f:
             q = pickle.load(f)
             return q
  

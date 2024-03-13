@@ -1,6 +1,6 @@
 from othello import *
 
-evaluate(500, "empty")  
+evaluate(5, "masterq")  
 
 # q = OthelloAI.load_data("66_move_eval")
 

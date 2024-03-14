@@ -392,7 +392,7 @@ class OthelloAI():
         self.qs_used = 0
         self.color = None
         
-
+    # Q-LEARNING
     def update(self, old_state, action, new_state, reward, game_instance):
         """
         Update Q-learning model, given an old state, an action taken
@@ -448,7 +448,7 @@ class OthelloAI():
 
         Q(s, a) <- old value estimate + alpha * (new value estimate - old value estimate)
 
-        Q(state, action) = Q(state, action) + α * (reward + γ * max_a Q(next_state, a) - Q(state, action))
+        Q(state, action) = Q(state, action) + a * (reward + Y * max_a Q(next_state, a) - Q(state, action))
 
 
         where `old value estimate` is the previous Q-value,
@@ -485,14 +485,8 @@ class OthelloAI():
         """
         Given a state `state`, consider all possible `(state, action)`
         pairs available in that state and return the maximum of all
-        of their Q-values.
+        of their Qntable-values.
 
-        Use 0 as the Q-value if a `(state, action)` pair has no
-        Q-value in `self.q`. If there are no available actions in
-        `state`, return 0.
-
-        =epsilon is the exploration rate (probability of taking a random action))]
-        ='Q-table' is a dictionary mapping state-action pairs to Q-values
         """
         actions =  game_instance.available_actions(state, game_instance.player)
         # print(f"+++best_future: actions={actions} len={len(actions)})") 
@@ -597,6 +591,209 @@ class OthelloAI():
         # print(f'+--end of choose_q_action()')
         return action, captured
     
+    def invertboard(self, board):
+        copyboard = deepcopy(board)
+        for i in range(len(copyboard)):
+            for j in range(len(copyboard)):
+                if copyboard[i][j] == 1:
+                    copyboard[i][j] = -1
+                elif copyboard[i][j] == -1:
+                    copyboard[i][j] = 1
+        return copyboard
+    
+    def save_data(self, filename):
+        with open(f'QNtables/{filename}.pickle', 'wb') as f:
+            # print(f"+++saving qtable: {self.q}")
+            pickle.dump(self.q, f)
+
+    @classmethod
+    def load_data(self, filename ):
+        # print(f"+++load_data  with {filename}")
+        with open(f'QNtables/{filename}.pickle', 'rb') as f:
+            q = pickle.load(f)
+            return q
+
+    
+    ### TUPLES
+    def generate_tuple_list(self, board_size):
+        tuples_list = []
+        for i in range(board_size):
+            for j in range(board_size):
+                if j < board_size - 1:  # Horizontal tuples
+                    tuples_list.append(((i, j), (i, j + 1) ))
+                if i < board_size - 1:  # Vertical tuples
+                    tuples_list.append(((i, j), (i + 1, j) ))
+                if i < board_size - 1 and j < board_size - 1:  # Diagonal right-down
+                    tuples_list.append(((i, j), (i + 1, j + 1) ))
+                if i < board_size - 1 and j > 0:  # Diagonal left-down
+                    tuples_list.append(((i, j), (i + 1, j - 1) ))
+        # print(f"---tuples_list={tuples_list}")
+        return tuples_list
+
+    def extractboardtupleindexes(self, board, tuplelist):
+        indexlist = []
+        for ntuple in tuplelist:
+            index = board[tuple[0][1]] * 3^0 + board[tuple[0][0]] * 3^1
+            indexlist.append((ntuple, index))
+        return indexlist
+
+    def update_qntable    
+    
+    ### CANONICAL BOARD
+    def rotate_board(self,board):
+        """Rotate the board 90 degrees clockwise."""
+        return [list(row) for row in zip(*board[::-1])]
+
+    def reflect_board(self,board):
+        """Reflect the board horizontally."""
+        return [row[::-1] for row in board]
+
+    def symmetries_with_xforms(self, board):
+        # Initial board with no transformations
+        rotations = [(board, ["none"])]
+
+        # Generate rotations
+        for i in range(1, 4):
+            new_rotation = self.rotate_board(rotations[-1][0])
+            rotations.append((new_rotation, [f"rotate {90 * i}"]))
+
+        reflections = []
+        # Generate reflections for original and each rotation
+        for rot, trans in rotations:
+            new_reflection = self.reflect_board(rot)
+
+            # Determine correct reflection label based on rotation before reflection
+            if "rotate 90" in trans or "rotate 270" in trans:
+                # A "horizontal" reflection becomes vertical after a 90 or 270-degree rotation
+                reflection_label = "reflect vertically"
+            else:
+                # Otherwise, it's a horizontal reflection
+                reflection_label = "reflect horizontally"
+
+            # If initial transformation was "none", just use the determined reflection label
+            if trans == ["none"]:
+                reflections.append((new_reflection, [reflection_label]))
+            else:
+                reflections.append((new_reflection, trans + [reflection_label]))
+
+        return rotations + reflections
+    
+    def canonical_board(self,board):
+        symmetries = self.symmetries_with_xforms(board)
+        # print(f"---symmetries= {symmetries}")
+        # Flatten boards for comparison and keep transformations
+        flatsyms = [([element for row in sym[0] for element in row], sym[1]) for sym in symmetries]
+
+        # Find the lexicographically smallest board and its transformation history
+        lexicographically_smallest, transformations = min(flatsyms, key=lambda x: x[0])
+
+        # Reconstruct the 2D list from the flattened version
+        board_size = len(board)
+        result = [lexicographically_smallest[i:i + board_size] for i in range(0, len(lexicographically_smallest), board_size)]
+        # if transformations is none return None
+        if transformations == ["none"]:
+            transformations = None
+        return result, transformations
+
+    def canonical_move(self, xform, move, size):
+        """
+        Translate the move to the canonical board position
+        """
+        # print(f"+++rcanonical_move()")
+        # print(f'---original move= {move}')
+        # print(f'---xform= {xform}')
+        # print(f'---size= {size}')
+        if not xform:
+                return move
+        for xs in xform:
+            # print(f'\n---move b4 xform= {move}') 
+            # print(f'---this xform= {xs}')  
+            
+            if xs == "reflect horizontally":
+                move = (move[0], size - 1 - move[1])
+                # print(f'---xform= reflect horizontally= {move}')
+            elif xs == "rotate 90":
+                # move = (size - 1 - move[1], move[0])
+                move = (move[1], size - 1 - move[0])
+
+                # print(f'---xform= rotate 90 = {move}')
+            elif xs == "rotate 180":
+                move = (size - 1 - move[0], size - 1 - move[1])
+                # print(f'---xform= 180 = {move}')
+            elif xs == "rotate 270":
+                move = ( size - 1 - move[1], move[0])
+                
+
+                # print(f'---xform= 270= {move}')
+            elif xs == "reflect vertically":   
+                move = (move[0],size - 1 - move[1],)
+                # print(f'---xform= reflect vertically= {move}')
+            
+        # print(f'---canonical move= {move}')
+        return move
+    
+    def retranslate_move(self, xform, move, size):
+        """
+        Retranslate the move to the original board position
+        """
+        print(f"+++retranslate_move()")
+        print(f'---original move= {move}')
+        print(f'---xform= {xform}')
+        # print(f'---size= {size}')
+        if not xform:
+                return move
+        for xs in reversed(xform):
+            print(f'\n---move b4 xform= {move}') 
+            print(f'---this xform= {xs}')  
+            
+            if xs == "reflect horizontally":
+                move = (move[0], size - 1 - move[1])
+                print(f'---xform= reflect horizontally= {move}')
+            elif xs == "rotate 90":
+                move = (size - 1 - move[1], move[0])
+                print(f'---xform= rotate 90 = {move}')
+            elif xs == "rotate 180":
+                move = (size - 1 - move[0], size - 1 - move[1])
+                print(f'---xform= 180 = {move}')
+            elif xs == "rotate 270":
+                move = ( size - 1 - move[0], move[1])
+                print(f'---xform= 270= {move}')
+            
+        print(f'---retranslated move= {move}')
+        return move
+
+    def retranslate_board(self, xform, board):
+        """
+        Retranslate the board to the original board position
+        """
+        if xform == "none":
+            return board
+        elif xform == "reflect horizontally":
+            return self.reflect_board(board)
+        elif xform == "rotate 90":
+            return self.rotate_board(self.rotate_board(self.rotate_board(board)))
+        elif xform == "rotate 180":
+            return self.rotate_board(self.rotate_board(board))
+        elif xform == "rotate 270":
+            return self.rotate_board(board)
+
+    # BOARD EVALUATION
+    def evalweights(self, board):
+        print(f"+++evalweights()")
+        board = np.array(board)
+        weights = np.array([
+            [1, -0.25, 0.1,  0.1, -0.25, 1],
+            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
+            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
+            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
+            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
+            [1, -0.25, 0.1,  0.1, -0.25, 1]
+        ])
+
+        # Element-wise multiplication followed by sum
+        result = np.sum(board * weights)
+        return result
+
     def choose_evaluated_action(self, state, availactions, game_instance):
         """
         returns action and captures
@@ -616,7 +813,7 @@ class OthelloAI():
             # print(f"---action={action}, besteval={besteval}")
         # print(f"---bestaction={bestaction}")
         return bestaction, availactions[bestaction]
-        
+       
     def is_edge(self,move, last_index):
         return move[0] == 0 or move[0] == last_index or move[1] == 0 or move[1] == last_index
 
@@ -875,304 +1072,7 @@ class OthelloAI():
 
         return val
 
-    def invertboard(self, board):
-        copyboard = deepcopy(board)
-        for i in range(len(copyboard)):
-            for j in range(len(copyboard)):
-                if copyboard[i][j] == 1:
-                    copyboard[i][j] = -1
-                elif copyboard[i][j] == -1:
-                    copyboard[i][j] = 1
-        return copyboard
-    
-    def save_data(self, filename):
-        with open(f'QNtables/{filename}.pickle', 'wb') as f:
-            # print(f"+++saving qtable: {self.q}")
-            pickle.dump(self.q, f)
 
-    def maketuples(self, size):
-
-        def rotate90():
-            ...
-
-        def rotate180():
-            ...
-
-        def reflect180():
-            ...
-
-        def indexcalc(i,j):
-            index =i * 3^1 + j * 3^0
-            ...
-
-        ntuples = {}
-        # ntuples['((0,0),(0,1)),']
-    
-
-        for i in range(size):
-            for j in range(size):
-                if j < size - 1:    # Horizontal tuples
-                    for k in range(9):
-                        ntuples[((i,j), (i,j+1)),k] = 0
-                if i < size - 1:    # Vertical tuples
-                    ntuples[((i,j), (i+1,j))] = 1
-                if i < size - 1 and j < size - 1:    # Diagonal right-down
-                    ntuples[((i,j), (i+1,j+1))] = 2
-                if i < size - 1 and j > 0:    # Diagonal left-down
-                    ntuples[((i,j), (i+1,j-1))] = 3
-
-        return ntuples
-
-    @classmethod
-    def load_data(self, filename ):
-        # print(f"+++load_data  with {filename}")
-        with open(f'QNtables/{filename}.pickle', 'rb') as f:
-            q = pickle.load(f)
-            return q
- 
-    def evalweights(self, board):
-        print(f"+++evalweights()")
-        board = np.array(board)
-        weights = np.array([
-            [1, -0.25, 0.1,  0.1, -0.25, 1],
-            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
-            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
-            [0.1, 0.01, 0.05, 0.05, 0.01, 0.1],
-            [-0.25, -0.25, 0.01, 0.01, -0.25, -0.25],
-            [1, -0.25, 0.1,  0.1, -0.25, 1]
-        ])
-
-        # Element-wise multiplication followed by sum
-        result = np.sum(board * weights)
-        return result
-
-    def generate_2_tuples(self, board_size):
-        tuples_list = []
-        for k in range (1,10):
-            for i in range(board_size):
-                for j in range(board_size):
-                    if j < board_size - 1:  # Horizontal tuples
-                        tuples_list.append(((i, j), (i, j + 1),k))
-                    if i < board_size - 1:  # Vertical tuples
-                        tuples_list.append(((i, j), (i + 1, j),k))
-                    if i < board_size - 1 and j < board_size - 1:  # Diagonal right-down
-                        tuples_list.append(((i, j), (i + 1, j + 1),k))
-                    if i < board_size - 1 and j > 0:  # Diagonal left-down
-                        tuples_list.append(((i, j), (i + 1, j - 1),k))
-        # print(f"---tuples_list={tuples_list}")
-        return tuples_list
-
-
-    ### CANONICAL BOARD REPRESENTATION
-
-    def rotate_board(self,board):
-        """Rotate the board 90 degrees clockwise."""
-        return [list(row) for row in zip(*board[::-1])]
-
-    def reflect_board(self,board):
-        """Reflect the board horizontally."""
-        return [row[::-1] for row in board]
-
-    # def symmetries_with_xforms//////(self,board):
-    #     # Initial board with no transformations
-    #     rotations = [(board, ["none"])]
-    #     # Generate rotations
-    #     for i in range(1, 4):
-    #         new_rotation = self.rotate_board(rotations[-1][0])
-    #         rotations.append((new_rotation, [f"rotate {90 * i}"]))
-
-    #     reflections = []
-    #     # Generate reflections for original and each rotation
-    #     for rot, trans in rotations:
-    #         new_reflection = self.reflect_board(rot)
-    #         # If initial transformation was "none", replace with "reflect horizontally"
-    #         if trans == ["none"]:
-    #             reflections.append((new_reflection, ["reflect horizontally"]))
-    #         else:
-    #             reflections.append((new_reflection, trans + ["reflect horizontally"]))
-
-    #     return rotations + reflections
-
-    def symmetries_with_xforms(self, board):
-        # Initial board with no transformations
-        rotations = [(board, ["none"])]
-
-        # Generate rotations
-        for i in range(1, 4):
-            new_rotation = self.rotate_board(rotations[-1][0])
-            rotations.append((new_rotation, [f"rotate {90 * i}"]))
-
-        reflections = []
-        # Generate reflections for original and each rotation
-        for rot, trans in rotations:
-            new_reflection = self.reflect_board(rot)
-
-            # Determine correct reflection label based on rotation before reflection
-            if "rotate 90" in trans or "rotate 270" in trans:
-                # A "horizontal" reflection becomes vertical after a 90 or 270-degree rotation
-                reflection_label = "reflect vertically"
-            else:
-                # Otherwise, it's a horizontal reflection
-                reflection_label = "reflect horizontally"
-
-            # If initial transformation was "none", just use the determined reflection label
-            if trans == ["none"]:
-                reflections.append((new_reflection, [reflection_label]))
-            else:
-                reflections.append((new_reflection, trans + [reflection_label]))
-
-        return rotations + reflections
-
-    def determine_actual_reflection(trans):
-        """
-        This function would be used if we were dynamically determining the reflection type
-        based on the transformations list. It's integrated into the solution above with an
-        if-else construct.
-        """
-        pass
-
-    
-    def canonical_board(self,board):
-        symmetries = self.symmetries_with_xforms(board)
-        # print(f"---symmetries= {symmetries}")
-        # Flatten boards for comparison and keep transformations
-        flatsyms = [([element for row in sym[0] for element in row], sym[1]) for sym in symmetries]
-
-        # Find the lexicographically smallest board and its transformation history
-        lexicographically_smallest, transformations = min(flatsyms, key=lambda x: x[0])
-
-        # Reconstruct the 2D list from the flattened version
-        board_size = len(board)
-        result = [lexicographically_smallest[i:i + board_size] for i in range(0, len(lexicographically_smallest), board_size)]
-        # if transformations is none return None
-        if transformations == ["none"]:
-            transformations = None
-        return result, transformations
-
-    def canonical_move(self, xform, move, size):
-        """
-        Translate the move to the canonical board position
-        """
-        # print(f"+++rcanonical_move()")
-        # print(f'---original move= {move}')
-        # print(f'---xform= {xform}')
-        # print(f'---size= {size}')
-        if not xform:
-                return move
-        for xs in xform:
-            # print(f'\n---move b4 xform= {move}') 
-            # print(f'---this xform= {xs}')  
-            
-            if xs == "reflect horizontally":
-                move = (move[0], size - 1 - move[1])
-                # print(f'---xform= reflect horizontally= {move}')
-            elif xs == "rotate 90":
-                # move = (size - 1 - move[1], move[0])
-                move = (move[1], size - 1 - move[0])
-
-                # print(f'---xform= rotate 90 = {move}')
-            elif xs == "rotate 180":
-                move = (size - 1 - move[0], size - 1 - move[1])
-                # print(f'---xform= 180 = {move}')
-            elif xs == "rotate 270":
-                move = ( size - 1 - move[1], move[0])
-                
-
-                # print(f'---xform= 270= {move}')
-            elif xs == "reflect vertically":   
-                move = (move[0],size - 1 - move[1],)
-                # print(f'---xform= reflect vertically= {move}')
-            
-        # print(f'---canonical move= {move}')
-        return move
-    
-    def retranslate_move(self, xform, move, size):
-        """
-        Retranslate the move to the original board position
-        """
-        print(f"+++retranslate_move()")
-        print(f'---original move= {move}')
-        print(f'---xform= {xform}')
-        # print(f'---size= {size}')
-        if not xform:
-                return move
-        for xs in reversed(xform):
-            print(f'\n---move b4 xform= {move}') 
-            print(f'---this xform= {xs}')  
-            
-            if xs == "reflect horizontally":
-                move = (move[0], size - 1 - move[1])
-                print(f'---xform= reflect horizontally= {move}')
-            elif xs == "rotate 90":
-                move = (size - 1 - move[1], move[0])
-                print(f'---xform= rotate 90 = {move}')
-            elif xs == "rotate 180":
-                move = (size - 1 - move[0], size - 1 - move[1])
-                print(f'---xform= 180 = {move}')
-            elif xs == "rotate 270":
-                move = ( size - 1 - move[0], move[1])
-                print(f'---xform= 270= {move}')
-            
-        print(f'---retranslated move= {move}')
-        return move
-
-    # function ot turn canonical board back to original
-    def retranslate_board(self, xform, board):
-        """
-        Retranslate the board to the original board position
-        """
-        if xform == "none":
-            return board
-        elif xform == "reflect horizontally":
-            return self.reflect_board(board)
-        elif xform == "rotate 90":
-            return self.rotate_board(self.rotate_board(self.rotate_board(board)))
-        elif xform == "rotate 180":
-            return self.rotate_board(self.rotate_board(board))
-        elif xform == "rotate 270":
-            return self.rotate_board(board)
-
-# def plot(data):    
-#     filetime=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-#     iteration = data['Iteration']
-#     alpha = data['Alpha']
-#     epsilon = data['Epsilon']
-#     deltaq = data['Deltaq']
-
-#     plt.figure(figsize=(12, 8))
-#     # Background color for the entire figure
-#     plt.gcf().set_facecolor('black')
-#     # Plot training & validation accuracy values
-    
-#     # first subplot ////////////////////////////////
-#     plt.subplot(2, 2, 1)
-    
-#     plt.title('epsilon and alpha', color='white')
-#     # Plot epsilon
-#     plt.plot(data["Iteration"], data["Epsilon"], label='Epsilon', color='blue')
-#     # Plot alpha
-#     plt.plot(data["Iteration"], data["Alpha"], label='Alpha', color='red')
-#     # Plot delta Q
-#     plt.plot(data["Iteration"], data["Deltaq"], label='Delta Q', color='green')
-#     legend = plt.legend(facecolor='black', edgecolor='white')
-#     for text in legend.get_texts():
-#         text.set_color("white")
-#     plt.tick_params(colors='white')  # Changing tick color to white
-#     plt.gca().spines['bottom'].set_color('white')  # Change x-axis line color to white
-#     plt.gca().spines['left'].set_color('white')    # Change y-axis line color to white  
-
-#       # Set the background color for each subplot (axes)
-#     for ax in plt.gcf().get_axes():
-#         ax.set_facecolor('black')
-    
-    
-#     chartname = f"{filetime}.png"
-#     if not os.path.exists('plots'):
-#         os.makedirs('plots')
-#     chartnamepath = os.path.join('plots', chartname)
-#     plt.savefig(chartnamepath)
-#     plt.show()
-#     return chartnamepath
 
 def plot(data):
     filetime=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")

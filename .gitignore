@@ -23,3 +23,5 @@ test/__pycache__/test_othello.cpython-310-pytest-7.4.4.pyc
 qtables/
 plots/
 instance/
+-othello.code-workspace
+test/__pycache__/test_perspective.cpython-310-pytest-8.0.0.pyc

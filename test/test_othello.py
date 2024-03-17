@@ -65,3 +65,48 @@ def test_canonical_move():
 
     assert ai.canonical_move(['rotate 90'], (1,4), 6) == (4,4)
     # assert ai.retranslate_move(['rotate 90'], (1,4), 6) == (1,1)
+
+def test_canonical_board():
+    ai = OthelloAI()
+    board = [[0,0,0,1],
+             [0,0,1,1],
+             [0,0,0,0],
+             [0,0,0,0]]
+    assert ai.canonical_board(board) == (
+            [[0,0,0,0],
+             [0,0,0,0],
+             [0,0,1,0],
+             [0,0,1,1]], ['rotate 90'])
+   
+def test_canonical_board():
+    ai = OthelloAI()
+    board = [[0,0,0,0],
+             [0,1,0,1],
+             [0,0,0,0],
+             [0,0,0,0]]
+    assert ai.canonical_board(board) == (
+            [[0,0,0,0],
+             [0,0,0,0],
+             [0,1,0,1],
+             [0,0,0,0]], ['rotate 180', 'reflect horizontally'])
+    
+def test_canonical_board():
+    ai = OthelloAI()
+    board = [[0,0,0],
+             [0,0,0],
+             [1,1,0]]
+    assert ai.canonical_board(board) == (
+            [[0,0,0],
+             [0,0,0],
+             [0,1,1]], ['reflect horizontally'])
+    
+def test_canonical_board():
+    ai = OthelloAI()
+    board = [[0,0,0],
+             [0,0,0],
+             [1,0,0]]
+    assert ai.canonical_board(board) == (
+            [[0,0,0],
+             [0,0,0],
+             [0,0,1]], ['rotate 270'])
+    
